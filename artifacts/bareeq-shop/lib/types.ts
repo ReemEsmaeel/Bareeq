@@ -27,6 +27,7 @@ export type ShopCart = {
   items: CartItem[];
   total: number;
   removedItems: boolean;
+  quote: string;
 };
 
 export type ShopOrder = {
@@ -42,4 +43,12 @@ export type ShopOrder = {
   status: "pending" | "paid";
   createdAt: string;
   customer?: ShopUser | null;
+};
+
+export type AdminSummary = {
+  products: number;
+  customers: number;
+  orders: number;
+  pendingOrders: number;
+  orderValue: number;
 };

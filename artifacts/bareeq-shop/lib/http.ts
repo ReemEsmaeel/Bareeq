@@ -31,6 +31,10 @@ export async function handle(
           : error instanceof SyntaxError
             ? "Please send valid JSON."
             : "The request could not be completed. Check the shop connection settings and try again.";
+    if (code === 500 && !(error instanceof HttpError)) {
+      // Keep diagnostics useful without logging a URI, credentials, hashes or raw DB errors.
+      console.error("[shop-api] Unexpected failure type:", error instanceof Error ? error.name : "UnknownFailure");
+    }
     return NextResponse.json({ error: message }, { status: code });
   }
 }

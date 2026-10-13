@@ -58,6 +58,14 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void refreshUser();
+    // Re-validate the session when returning to the tab so another-tab logout or deactivation is reflected.
+    const onFocus = () => { if (document.visibilityState === "visible") void refreshUser(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
+    };
   }, [refreshUser]);
 
   return (

@@ -40,3 +40,11 @@ export function publicOrder(order: any): ShopOrder {
     createdAt: new Date(order.createdAt).toISOString(),
   };
 }
+
+// Only admin-authorized routes use this customer-enriched serializer.
+export function adminOrder(order: any): ShopOrder {
+  return {
+    ...publicOrder(order),
+    customer: order.user?.email ? publicUser(order.user) : null,
+  };
+}

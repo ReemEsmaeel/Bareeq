@@ -29,7 +29,10 @@ export const productInput = z.object({
   price: z.number().finite().min(0.01).max(1000000).refine((value) => Math.abs(value * 100 - Math.round(value * 100)) < 0.00001, "Use at most two decimal places for the price."),
   image: z.string().max(2000).refine((value) => {
     if (/^\/[a-zA-Z0-9/_\-.]+$/.test(value) && !value.includes("..")) return true;
-    try { return new URL(value).protocol === "https:"; } catch { return false; }
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && !url.username && !url.password;
+    } catch { return false; }
   }, "Use an HTTPS image URL or a local image path."),
   category: z.enum(["Lujain", "Rawnaq", "Wahaj"]),
 }).strict();
