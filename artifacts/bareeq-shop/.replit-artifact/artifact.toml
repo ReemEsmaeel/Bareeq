@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Bareeq Atelier Shop"
+description = "An independent bilingual Arabic-English silver jewelry boutique for browsing collections, managing a secure customer account, placing orders, and administering products and orders."
+version = "1.0.0"
+id = "artifacts/bareeq-shop"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23542
+
+[services.development]
+run = "pnpm --filter @workspace/bareeq-shop run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/bareeq-shop", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/bareeq-shop/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23542"
+BASE_PATH = "/"
