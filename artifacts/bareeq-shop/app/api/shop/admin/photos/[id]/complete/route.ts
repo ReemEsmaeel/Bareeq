@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { checkOrigin, handle, HttpError, validId } from "@/lib/http";
 import { adminPhoto } from "@/lib/photos";
-import { imageType, MAX_PHOTO_BYTES, photoFile } from "@/lib/photo-storage";
+import { imageType, MAX_LIBRARY_PHOTO_BYTES as MAX_PHOTO_BYTES, photoFile, photoStorageClient, validatePhoto } from "@/lib/photo-storage";
 import { Photo } from "@/models/Photo";
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -32,11 +32,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       }
       // Read the verified generation only; publish these exact bytes to a path
       // the client's signed PUT URL cannot overwrite.
-      const [bytes] = await staged.download({ start: 0, end: MAX_PHOTO_BYTES });
+      const snapshot = photoStorageClient.bucket(staged.bucket.name).file(staged.name, { generation: metadata.generation });
+      const [bytes] = await snapshot.download({ start: 0, end: MAX_PHOTO_BYTES });
       const actualType = imageType(bytes);
       if (bytes.length !== size || !actualType || actualType !== photo.contentType) {
         throw new HttpError(400, "This file is not a valid JPEG, PNG or WebP photo.");
       }
+      // Library uploads must pass full decoding too, not only signature checks.
+      await validatePhoto(bytes, actualType);
       await photoFile(id).save(bytes, {
         resumable: false,
         metadata: { contentType: actualType, cacheControl: "no-store" },
@@ -44,7 +47,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       photo.status = "ready";
       await photo.save();
       // Failure to remove staging must not pretend publication failed.
-      await staged.delete({ ignoreNotFound: true }).catch(() => {
+      await snapshot.delete({ ignoreNotFound: true }).catch(() => {
         console.warn("[shop-photo] Staged upload cleanup deferred.");
       });
       return adminPhoto(photo);

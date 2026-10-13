@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { checkOrigin, handle } from "@/lib/http";
-import { MAX_PHOTO_BYTES, photoUploadUrl } from "@/lib/photo-storage";
+import { MAX_LIBRARY_PHOTO_BYTES as MAX_PHOTO_BYTES, photoUploadUrl } from "@/lib/photo-storage";
 import { rateLimit } from "@/lib/rate-limit";
 import { Photo } from "@/models/Photo";
 

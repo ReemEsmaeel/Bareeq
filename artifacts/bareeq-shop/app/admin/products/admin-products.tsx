@@ -10,6 +10,7 @@ import { ApiError, api } from "@/lib/client";
 import { CATEGORIES, CATEGORY_AR, formatPrice, type Category } from "@/lib/format";
 import type { ShopProduct } from "@/lib/types";
 import { hasPermission } from "@/lib/permissions";
+import { AdminPhotoInput } from "@/components/admin-photo-input";
 
 type Draft = { name: string; nameAr: string; description: string; descriptionAr: string; price: string; image: string; category: Category };
 const empty: Draft = { name: "", nameAr: "", description: "", descriptionAr: "", price: "", image: "", category: "Lujain" };
@@ -34,9 +35,12 @@ export function AdminProducts() {
   const [toDelete, setToDelete] = useState<ShopProduct | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const permissionsKey = user?.permissions.join(",") ?? "";
+  const photoScope = `${user?.id}:${user?.roleId}:${permissionsKey}`;
   const openedFromQuery = useRef(false);
 
-  useEffect(() => { setEditing(null); setToDelete(null); setNotice(null); setUploadingPhoto(false); }, [user?.id, user?.role, user?.active, authLoading]);
+  useEffect(() => { setEditing(null); setToDelete(null); setNotice(null); setUploadingPhoto(false); setUploading(false); }, [user?.id, user?.role, user?.roleId, permissionsKey, user?.active, authLoading]);
   useEffect(() => {
     if (!openedFromQuery.current && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("new") === "1" && r.data) {
       openedFromQuery.current = true;
@@ -59,7 +63,7 @@ export function AdminProducts() {
 
   async function save(e: FormEvent) {
     e.preventDefault();
-    if (uploadingPhoto) return;
+    if (saving || uploadingPhoto || uploading) return;
     const price = Number(draft.price);
     if (!Number.isFinite(price) || price <= 0 || !/^\d+(\.\d{1,2})?$/.test(draft.price.trim())) { setFormError(c.priceErr); return; }
     const guard = r.scopeGuard();
@@ -109,7 +113,7 @@ export function AdminProducts() {
         {editing && (
           <form onSubmit={save} className="reveal mb-10 border border-[#2a0006]/10 bg-[#f0f5f0] p-5 sm:p-8" aria-labelledby="product-form-title">
             <h2 id="product-form-title" className="font-display text-2xl text-[#2a0006]">{editing === "new" ? c.newT : c.editT}</h2>
-            <fieldset disabled={saving || uploadingPhoto} className="mt-6 grid gap-5 sm:grid-cols-2">
+            <fieldset disabled={saving || uploadingPhoto || uploading} className="mt-6 grid gap-5 sm:grid-cols-2">
               <div><label htmlFor="p-name" className={adminLabel}>{c.name}</label><input id="p-name" required maxLength={150} dir="ltr" value={draft.name} onChange={set("name")} className={adminInput} /></div>
               <div><label htmlFor="p-nameAr" className={adminLabel}>{c.nameAr}</label><input id="p-nameAr" required maxLength={150} dir="rtl" value={draft.nameAr} onChange={set("nameAr")} className={`${adminInput} font-arabic text-[16px]`} /></div>
               <div><label htmlFor="p-desc" className={adminLabel}>{c.desc}</label><textarea id="p-desc" required maxLength={3000} rows={4} dir="ltr" value={draft.description} onChange={set("description")} className={adminInput} /></div>
@@ -122,26 +126,21 @@ export function AdminProducts() {
                 </select>
               </div>
               <div className="sm:col-span-2">
-                 <label htmlFor="p-image" className={adminLabel}>{c.image}</label>
-                 <div className="grid gap-4 sm:grid-cols-[140px_1fr]">
-                   <img src={draft.image || "/bareeq-editorial.jpg"} alt="" className="aspect-square w-32 border border-[#2a0006]/10 bg-[#f0f5f0] object-cover" />
-                   <div className="min-w-0">
-                     <input id="p-image" required maxLength={2000} dir="ltr" value={draft.image} onChange={set("image")} aria-describedby="p-image-hint" className={adminInput} />
-                     <p id="p-image-hint" className="mt-1.5 text-[11px] leading-5 text-[#796d68]">{c.imageHint}</p>
-                     <div className="mt-3 flex flex-wrap gap-3">
-                       <button type="button" className={ghostBtn} onClick={() => document.getElementById("p-photo-picker")?.scrollIntoView({ behavior: "smooth", block: "center" })}>{c.pick}</button>
-                       <button type="button" className="px-3 py-2 text-[11px] text-[#796d68] underline underline-offset-4" onClick={() => setDraft((d) => ({ ...d, image: "/bareeq-editorial.jpg" }))}>{c.resetImage}</button>
-                     </div>
-                     <p className="mt-2 text-[10px] text-[#796d68]">{c.resetHint}</p>
-                   </div>
-                 </div>
-                  {canManagePhotos && <div id="p-photo-picker"><PhotoPicker value={draft.image} onSelect={(url) => setDraft((d) => ({ ...d, image: url }))} onBusyChange={setUploadingPhoto} /></div>}
+                <AdminPhotoInput key={`${photoScope}:${editing === "new" ? "new" : editing.id}`} image={draft.image}
+                  canUpload={canManagePhotos} onChange={(image) => setDraft((d) => ({ ...d, image }))} onBusy={setUploading} />
+                <p className="mt-2 text-[11px] leading-5 text-[#796d68]">{c.imageHint}</p>
+                <div className="mt-3 flex flex-wrap gap-3">
+                  {canManagePhotos && <button type="button" className={ghostBtn} onClick={() => document.getElementById("p-photo-picker")?.scrollIntoView({ behavior: "smooth", block: "center" })}>{c.pick}</button>}
+                  <button type="button" className="px-3 py-2 text-[11px] text-[#796d68] underline underline-offset-4" onClick={() => setDraft((d) => ({ ...d, image: "/bareeq-editorial.jpg" }))}>{c.resetImage}</button>
+                </div>
+                <p className="mt-2 text-[10px] text-[#796d68]">{c.resetHint}</p>
+                {canManagePhotos && <div id="p-photo-picker"><PhotoPicker key={photoScope} value={draft.image} onSelect={(url) => setDraft((d) => ({ ...d, image: url }))} onBusyChange={setUploadingPhoto} /></div>}
               </div>
             </fieldset>
             {formError && <p role="alert" className="mt-5 border-s-2 border-[#4a0e17] bg-[#4a0e17]/5 px-4 py-3 text-[13px] text-[#4a0e17]">{formError}</p>}
             <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button type="button" className={ghostBtn} onClick={() => setEditing(null)} disabled={saving || uploadingPhoto}>{c.cancel}</button>
-              <button type="submit" className={primaryBtn} disabled={saving || uploadingPhoto}>{uploadingPhoto ? c.photoUploading : saving ? c.saving : c.save}</button>
+              <button type="submit" className={primaryBtn} disabled={saving || uploadingPhoto || uploading}>{uploadingPhoto || uploading ? c.photoUploading : saving ? c.saving : c.save}</button>
             </div>
           </form>
         )}
@@ -163,8 +162,8 @@ export function AdminProducts() {
                         <p className="text-[12px] text-[#796d68]">{ar ? CATEGORY_AR[p.category] : p.category} · <span className="tabular-nums">{formatPrice(p.price, language)}</span></p>
                       </div>
                       <div className="flex shrink-0 gap-4">
-                        <button className="eyebrow text-[#2a0006] hover:text-[#456553] disabled:opacity-40" onClick={() => open(p)} aria-label={`${c.edit} ${p.name}`} disabled={uploadingPhoto || saving || deleting}>{c.edit}</button>
-                        <button className="eyebrow text-[#4a0e17]/80 hover:text-[#4a0e17] disabled:opacity-40" onClick={() => setToDelete(p)} aria-label={`${c.del} ${p.name}`} disabled={uploadingPhoto || saving || deleting}>{c.del}</button>
+                        <button className="eyebrow text-[#2a0006] hover:text-[#456553] disabled:opacity-40" onClick={() => open(p)} aria-label={`${c.edit} ${p.name}`} disabled={uploadingPhoto || uploading || saving || deleting}>{c.edit}</button>
+                        <button className="eyebrow text-[#4a0e17]/80 hover:text-[#4a0e17] disabled:opacity-40" onClick={() => setToDelete(p)} aria-label={`${c.del} ${p.name}`} disabled={uploadingPhoto || uploading || saving || deleting}>{c.del}</button>
                       </div>
                     </li>
                   ))}

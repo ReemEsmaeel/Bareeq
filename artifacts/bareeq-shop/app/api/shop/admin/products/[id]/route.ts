@@ -5,6 +5,7 @@ import { productInput } from "@/lib/validation";
 import { publicProduct } from "@/lib/serialize";
 import { Product } from "@/models/Product";
 import { saveProductWithPhoto } from "@/lib/photos";
+import { assertPhotoReference } from "@/lib/photo-storage";
 
 export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   return handle(async () => {
@@ -13,6 +14,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const { id } = await context.params;
     validId(id);
     const data = productInput.parse(await request.json());
+    await assertPhotoReference(data.image);
     const product = await saveProductWithPhoto(data, id);
     return publicProduct(product);
   });

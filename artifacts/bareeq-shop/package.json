@@ -12,9 +12,10 @@
     "verify:auth": "tsx scripts/verify-auth.ts",
     "verify:shop": "tsx scripts/verify-shop.ts",
     "verify:admin": "tsx scripts/verify-admin.ts",
+    "verify:photos": "tsx scripts/verify-photos.ts",
     "verify:sessions": "tsx scripts/verify-session-revocation.ts",
     "verify:unavailable-cart": "tsx scripts/verify-unavailable-cart.ts",
-    "verify:photos": "tsx scripts/verify-photos.ts",
+    "verify:photo-library": "tsx scripts/verify-photo-library.ts",
     "verify:settings": "tsx scripts/verify-settings.ts",
     "verify:order-protection": "tsx scripts/verify-order-protection.ts",
     "create-admin": "tsx scripts/create-admin.ts"
@@ -92,6 +93,7 @@
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.12",
     "mongoose": "^9.11.1",
-    "next": "^16.4.0"
+    "next": "^16.4.0",
+    "sharp": "^0.35.5"
   }
 }

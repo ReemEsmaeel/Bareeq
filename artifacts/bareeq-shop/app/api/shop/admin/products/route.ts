@@ -5,6 +5,7 @@ import { productInput } from "@/lib/validation";
 import { publicProduct } from "@/lib/serialize";
 import { Product } from "@/models/Product";
 import { saveProductWithPhoto } from "@/lib/photos";
+import { assertPhotoReference } from "@/lib/photo-storage";
 
 export async function GET() {
   return handle(async () => {
@@ -18,6 +19,7 @@ export async function POST(request: NextRequest) {
     checkOrigin(request);
     await requireAdmin("products");
     const data = productInput.parse(await request.json());
+    await assertPhotoReference(data.image);
     return publicProduct(await saveProductWithPhoto(data));
   }, 201);
 }

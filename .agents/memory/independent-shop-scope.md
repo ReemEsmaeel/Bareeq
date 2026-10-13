@@ -8,3 +8,9 @@ The new shop must remain independent of the existing deployed Bareeq Atelier bou
 **Why:** The user explicitly asked to keep the existing project untouched.
 
 **How to apply:** Keep shop work in its independent app. Even if the configured MongoDB URI points at the same Atlas cluster, select an independent database explicitly rather than trusting the URI's database path.
+
+Keep the independent shop's existing authentication and database when adding App Storage uploads; adapt storage guidance to Next.js rather than introducing Express or migrating the database.
+
+**Why:** The user explicitly required photo uploads without Express, database replacement or changes to the original boutique's data.
+
+**How to apply:** Treat generic storage recipes that suggest a different authentication or database stack as examples, not permission to replace this shop's stack.

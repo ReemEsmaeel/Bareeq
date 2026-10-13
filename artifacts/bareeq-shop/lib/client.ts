@@ -6,12 +6,13 @@ export class ApiError extends Error {
 
 export async function api<T>(
   path: string,
-  options: { method?: string; body?: unknown } = {},
+  options: { method?: string; body?: unknown; signal?: AbortSignal } = {},
 ): Promise<T> {
   const response = await fetch(`/api/shop${path}`, {
     method: options.method || "GET",
     credentials: "same-origin",
     cache: "no-store",
+    signal: options.signal,
     ...(options.body !== undefined ? {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(options.body),
