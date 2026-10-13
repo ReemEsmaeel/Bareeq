@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { CollectionPhoto } from "@/components/collection-photo";
 import { FeaturedProducts } from "@/components/featured-products";
 import { useShop } from "@/components/shop-provider";
 
@@ -74,7 +75,6 @@ const collections = [
     name: "Lujain",
     arabic: "لُجين",
     meaning: { en: "Silver, in its most luminous form.", ar: "الفضة، في أكثر صورها إشراقاً." },
-    image: "lujain",
   },
   {
     id: "rawnaq",
@@ -82,7 +82,6 @@ const collections = [
     name: "Rawnaq",
     arabic: "رَوْنَق",
     meaning: { en: "A little radiance in the everyday.", ar: "شيءٌ من الإشراق في كل يوم." },
-    image: "rawnaq",
   },
   {
     id: "wahaj",
@@ -90,9 +89,8 @@ const collections = [
     name: "Wahaj",
     arabic: "وَهَج",
     meaning: { en: "For the moments that stay with you.", ar: "للحظات التي تبقى معكِ." },
-    image: "wahaj",
   },
-];
+] as const;
 
 function ArrowIcon({ diagonal = false }: { diagonal?: boolean }) {
   return (
@@ -185,12 +183,11 @@ export default function HomePage() {
             <p className={`max-w-[220px] pb-1 text-[12px] leading-[1.8] text-[#796d68] ${isArabic ? "font-arabic text-[17px]" : ""}`}>{text.collectionNote}</p>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-3 sm:gap-4 lg:gap-6">
-            {collections.map((collection, index) => (
+            {collections.map((collection) => (
               <Link href={`/products?category=${collection.name}`} key={collection.id} className="group block">
-                <div className={`collection-art collection-art-${collection.image} relative aspect-[.86] overflow-hidden transition-transform duration-500 group-hover:-translate-y-1`}>
+                <div className="relative aspect-[.86] overflow-hidden transition-transform duration-500 group-hover:-translate-y-1">
+                  <CollectionPhoto collectionName={collection.name} language={language} />
                   <span className="absolute left-5 top-5 font-display text-[12px] text-[#456553]/80">{collection.number} / 03</span>
-                  <span className={`collection-orb collection-orb-${index}`} />
-                  <span className={`collection-line collection-line-${index}`} />
                   <span className="absolute bottom-4 left-5 font-display text-[10px] italic tracking-[.08em] text-[#456553]/70">A BAREEQ STUDY</span>
                   <span className="absolute bottom-4 right-5 text-[10px] tracking-[.12em] text-[#456553]/60">925</span>
                 </div>
@@ -229,18 +226,6 @@ export default function HomePage() {
       <style jsx global>{`
         .arabic-page { font-family: var(--font-arabic); }
         .arabic-page .eyebrow { font-family: var(--font-body); }
-        .collection-art { background-color: #e9efe8; }
-        .collection-art-lujain { background: radial-gradient(ellipse at 53% 49%, #f6fbf5 0 3%, transparent 3.5%), linear-gradient(145deg, #e9efe8, #dce7dd 55%, #e8eee7); }
-        .collection-art-rawnaq { background: linear-gradient(145deg, #e8ece4, #dfe8de 55%, #e9eee7); }
-        .collection-art-wahaj { background: linear-gradient(145deg, #e7ebe3, #e3e9e1 52%, #d8e2d9); }
-        .collection-orb { position: absolute; left: 50%; top: 49%; width: 48%; aspect-ratio: 1; transform: translate(-50%,-50%); border: 1px solid rgba(112,129,113,.8); border-radius: 50%; box-shadow: inset 0 0 0 4px rgba(246,251,245,.34), 8px 16px 25px rgba(49,65,52,.12); }
-        .collection-orb-0 { width: 42%; border-width: 2px; transform: translate(-50%,-50%) rotate(-22deg) scaleX(.72); box-shadow: inset 0 0 0 3px rgba(246,251,245,.55), 9px 18px 22px rgba(49,65,52,.17); }
-        .collection-orb-1 { width: 55%; transform: translate(-50%,-50%) rotate(29deg) scaleX(.62); }
-        .collection-orb-2 { width: 50%; border-width: 2px; transform: translate(-50%,-50%) rotate(8deg) scaleX(.8); }
-        .collection-line { position: absolute; left: 50%; top: 49%; width: 61%; height: 1px; transform: translate(-50%,-50%) rotate(-48deg); background: linear-gradient(90deg, transparent, rgba(104,126,106,.65), transparent); }
-        .collection-line-1 { width: 75%; transform: translate(-50%,-50%) rotate(37deg); }
-        .collection-line-2 { width: 56%; transform: translate(-50%,-50%) rotate(-71deg); }
-        @media (min-width: 768px) { .arabic-page .collection-orb { top: 48%; } }
       `}</style>
     </main>
   );
