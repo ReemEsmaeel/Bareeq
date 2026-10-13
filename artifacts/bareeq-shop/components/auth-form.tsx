@@ -39,7 +39,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const { language, refreshUser } = useShop();
   const router = useRouter();
   const params = useSearchParams();
-  const next = safeNext(params.get("next"));
+  const next = safeNext(params.get("next"), mode === "signup" ? "/account" : "/products");
   const t = copy[language];
   const m = t[mode];
   const ar = language === "ar";
