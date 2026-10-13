@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { ApiError, api } from "@/lib/client";
+import { trackEvent } from "@/lib/analytics";
 import { safeNext } from "@/lib/next-path";
 import type { ShopUser } from "@/lib/types";
 import { AuthShell, buttonClass, fieldClass, labelClass } from "./auth-shell";
@@ -57,6 +58,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         method: "POST",
         body: mode === "signup" ? { name: name.trim(), email: email.trim(), password } : { email: email.trim(), password },
       });
+      if (mode === "signup") trackEvent("account_created", undefined);
       await refreshUser();
       router.replace(next);
       router.refresh();

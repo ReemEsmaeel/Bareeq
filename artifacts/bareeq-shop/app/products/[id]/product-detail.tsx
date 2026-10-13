@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ProductImage, QuantityStepper, StateBlock, ghostBtn, primaryBtn } from "@/components/shop-ui";
 import { useShop } from "@/components/shop-provider";
 import { ApiError, api } from "@/lib/client";
+import { trackEvent } from "@/lib/analytics";
 import { CATEGORY_AR, formatPrice } from "@/lib/format";
 import type { ShopCart, ShopProduct } from "@/lib/types";
 
@@ -46,7 +47,13 @@ export function ProductDetail({ id }: { id: string }) {
     setBusy(true);
     setNotice(null);
     try {
-      await api<ShopCart>("/cart", { method: "POST", body: { productId: product.id, quantity } });
+      const cart = await api<ShopCart>("/cart", { method: "POST", body: { productId: product.id, quantity } });
+      const added = cart.items.find((item) => item.product.id === product.id);
+      if (added) trackEvent("add_to_bag", {
+        collection: added.product.category,
+        quantity,
+        value_sar: Math.round(added.product.price * quantity * 100) / 100,
+      });
       setNotice({ ok: true, text: c.added });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) { router.push("/login?next=/cart"); return; }

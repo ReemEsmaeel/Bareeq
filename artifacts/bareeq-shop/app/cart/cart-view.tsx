@@ -7,6 +7,7 @@ import { InlineError, PageIntro, SignInPrompt, ProductImage, QuantityStepper, St
 import { useShop } from "@/components/shop-provider";
 import { useScopedResource } from "@/components/use-fresh";
 import { ApiError, api } from "@/lib/client";
+import { trackEvent } from "@/lib/analytics";
 import { CATEGORY_AR, formatPrice } from "@/lib/format";
 import type { ShopCart, ShopOrder } from "@/lib/types";
 
@@ -56,6 +57,10 @@ export function CartView() {
     setMessage("");
     try {
       const order = await api<ShopOrder>("/orders", { method: "POST", body: { quote: cart.quote } });
+      trackEvent("order_recorded", {
+        quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+        value_sar: order.total,
+      });
       if (!isCurrent()) return;
       router.push(`/orders/${order.id}`);
       router.refresh();
