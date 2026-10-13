@@ -381,6 +381,15 @@
   [hidden]:where(:not([hidden="until-found"])) {
     display: none !important;
   }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button {
+    font: inherit;
+  }
 }
 
 @layer components;
@@ -1088,10 +1097,6 @@
 
   .max-w-\[390px\] {
     max-width: 390px;
-  }
-
-  .max-w-\[430px\] {
-    max-width: 430px;
   }
 
   .max-w-\[490px\] {
@@ -2309,6 +2314,10 @@
     color: var(--color-white);
   }
 
+  .lowercase {
+    text-transform: lowercase;
+  }
+
   .italic {
     font-style: italic;
   }
@@ -2767,11 +2776,6 @@
   .file\:font-medium::file-selector-button {
     --tw-font-weight: var(--font-weight-medium);
     font-weight: var(--font-weight-medium);
-  }
-
-  .placeholder\:text-\[\#f6fbf5\]\/50::placeholder {
-    color: #f6fbf580;
-    color: lab(98.1122% -2.4977 2.27597 / .5);
   }
 
   .after\:absolute:after {
@@ -4042,15 +4046,6 @@ body {
 
 button, a {
   -webkit-tap-highlight-color: transparent;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  font: inherit;
 }
 
 ::selection {
