@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { AdminHeader, AdminLoadState, ConfirmDialog, Notice, RowsSkeleton, adminInput, adminLabel } from "@/components/admin-ui";
 import { ProductImage, StateBlock, ghostBtn, primaryBtn } from "@/components/shop-ui";
 import { useShop } from "@/components/shop-provider";
 import { useScopedResource } from "@/components/use-fresh";
+import { PhotoPicker } from "@/components/photo-picker";
 import { ApiError, api } from "@/lib/client";
 import { CATEGORIES, CATEGORY_AR, formatPrice, type Category } from "@/lib/format";
 import type { ShopProduct } from "@/lib/types";
@@ -13,12 +14,12 @@ type Draft = { name: string; nameAr: string; description: string; descriptionAr:
 const empty: Draft = { name: "", nameAr: "", description: "", descriptionAr: "", price: "", image: "", category: "Lujain" };
 
 const t = {
-  en: { kicker: "Pieces", title: "The collection.", add: "Add piece", search: "Search pieces", edit: "Edit", del: "Delete", newT: "New piece", editT: "Edit piece", name: "Name (English)", nameAr: "Name (Arabic)", desc: "Description (English)", descAr: "Description (Arabic)", price: "Price (SAR)", image: "Image URL or local path", imageHint: "An HTTPS URL, or a path such as /pieces/ring.jpg", category: "Collection", save: "Save piece", saving: "Saving", cancel: "Cancel", created: "Piece added to the collection.", updated: "Piece updated.", deleted: "Piece removed.", delT: "Remove this piece?", delBody: "It will be removed from the storefront and from every customer's bag. Orders that already include it keep their saved record.", delConfirm: "Remove piece", emptyT: "No pieces yet.", emptyX: "Add the first piece to open the collection.", noMatch: "No pieces match this search.", priceErr: "Enter a price greater than zero with at most two decimals." },
-  ar: { kicker: "القطع", title: "المجموعة.", add: "إضافة قطعة", search: "ابحثي في القطع", edit: "تعديل", del: "حذف", newT: "قطعة جديدة", editT: "تعديل القطعة", name: "الاسم (إنجليزي)", nameAr: "الاسم (عربي)", desc: "الوصف (إنجليزي)", descAr: "الوصف (عربي)", price: "السعر (ريال)", image: "رابط الصورة أو المسار المحلي", imageHint: "رابط HTTPS أو مسار مثل /pieces/ring.jpg", category: "المجموعة", save: "حفظ القطعة", saving: "جارٍ الحفظ", cancel: "إلغاء", created: "أُضيفت القطعة إلى المجموعة.", updated: "تم تحديث القطعة.", deleted: "أُزيلت القطعة.", delT: "إزالة هذه القطعة؟", delBody: "ستُزال من المتجر ومن حقائب جميع العملاء. تحتفظ الطلبات السابقة التي تتضمنها بسجلّها المحفوظ.", delConfirm: "إزالة القطعة", emptyT: "لا قطع بعد.", emptyX: "أضيفي أول قطعة لافتتاح المجموعة.", noMatch: "لا قطع تطابق هذا البحث.", priceErr: "أدخلي سعراً أكبر من صفر بخانتين عشريتين كحد أقصى." },
+  en: { kicker: "Pieces", title: "The collection.", add: "Add piece", search: "Search pieces", edit: "Edit", del: "Delete", newT: "New piece", editT: "Edit piece", name: "Name (English)", nameAr: "Name (Arabic)", desc: "Description (English)", descAr: "Description (Arabic)", price: "Price (SAR)", image: "Main product photo", imageHint: "A public HTTPS image URL or a local path such as /pieces/ring.jpg. Library photos are public product images; never upload sensitive files.", pick: "Choose from library", resetImage: "Remove photo", resetHint: "The illustrative default photo will be used after you save.", category: "Collection", save: "Save piece", saving: "Saving", photoUploading: "Uploading photo", cancel: "Cancel", created: "Piece added to the collection.", updated: "Piece updated.", deleted: "Piece removed.", delT: "Remove this piece?", delBody: "It will be removed from the storefront and from every customer's bag. Orders that already include it keep their saved record.", delConfirm: "Remove piece", emptyT: "No pieces yet.", emptyX: "Add the first piece to open the collection.", noMatch: "No pieces match this search.", priceErr: "Enter a price greater than zero with at most two decimals." },
+  ar: { kicker: "القطع", title: "المجموعة.", add: "إضافة قطعة", search: "ابحثي في القطع", edit: "تعديل", del: "حذف", newT: "قطعة جديدة", editT: "تعديل القطعة", name: "الاسم (إنجليزي)", nameAr: "الاسم (عربي)", desc: "الوصف (إنجليزي)", descAr: "الوصف (عربي)", price: "السعر (ريال)", image: "الصورة الرئيسية للمنتج", imageHint: "رابط صورة HTTPS عامة أو مسار محلي مثل /pieces/ring.jpg. صور المكتبة صور منتجات عامة؛ لا ترفعي ملفات حساسة.", pick: "اختيار من المكتبة", resetImage: "إزالة الصورة", resetHint: "ستُستخدم الصورة التوضيحية الافتراضية بعد الحفظ.", category: "المجموعة", save: "حفظ القطعة", saving: "جارٍ الحفظ", photoUploading: "جارٍ رفع الصورة", cancel: "إلغاء", created: "أُضيفت القطعة إلى المجموعة.", updated: "تم تحديث القطعة.", deleted: "أُزيلت القطعة.", delT: "إزالة هذه القطعة؟", delBody: "ستُزال من المتجر ومن حقائب جميع العملاء. تحتفظ الطلبات السابقة التي تتضمنها بسجلّها المحفوظ.", delConfirm: "إزالة القطعة", emptyT: "لا قطع بعد.", emptyX: "أضيفي أول قطعة لافتتاح المجموعة.", noMatch: "لا قطع تطابق هذا البحث.", priceErr: "أدخلي سعراً أكبر من صفر بخانتين عشريتين كحد أقصى." },
 };
 
 export function AdminProducts() {
-  const { language, user } = useShop();
+  const { language, user, authLoading } = useShop();
   const c = t[language];
   const ar = language === "ar";
   const r = useScopedResource<ShopProduct[]>("/admin/products");
@@ -30,8 +31,16 @@ export function AdminProducts() {
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [toDelete, setToDelete] = useState<ShopProduct | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const openedFromQuery = useRef(false);
 
-  useEffect(() => { setEditing(null); setToDelete(null); setNotice(null); }, [user?.id]);
+  useEffect(() => { setEditing(null); setToDelete(null); setNotice(null); setUploadingPhoto(false); }, [user?.id, user?.role, user?.active, authLoading]);
+  useEffect(() => {
+    if (!openedFromQuery.current && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("new") === "1" && r.data) {
+      openedFromQuery.current = true;
+      open("new");
+    }
+  }, [r.data]);
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -48,6 +57,7 @@ export function AdminProducts() {
 
   async function save(e: FormEvent) {
     e.preventDefault();
+    if (uploadingPhoto) return;
     const price = Number(draft.price);
     if (!Number.isFinite(price) || price <= 0 || !/^\d+(\.\d{1,2})?$/.test(draft.price.trim())) { setFormError(c.priceErr); return; }
     const guard = r.scopeGuard();
@@ -97,7 +107,7 @@ export function AdminProducts() {
         {editing && (
           <form onSubmit={save} className="reveal mb-10 border border-[#2a0006]/10 bg-[#f0f5f0] p-5 sm:p-8" aria-labelledby="product-form-title">
             <h2 id="product-form-title" className="font-display text-2xl text-[#2a0006]">{editing === "new" ? c.newT : c.editT}</h2>
-            <fieldset disabled={saving} className="mt-6 grid gap-5 sm:grid-cols-2">
+            <fieldset disabled={saving || uploadingPhoto} className="mt-6 grid gap-5 sm:grid-cols-2">
               <div><label htmlFor="p-name" className={adminLabel}>{c.name}</label><input id="p-name" required maxLength={150} dir="ltr" value={draft.name} onChange={set("name")} className={adminInput} /></div>
               <div><label htmlFor="p-nameAr" className={adminLabel}>{c.nameAr}</label><input id="p-nameAr" required maxLength={150} dir="rtl" value={draft.nameAr} onChange={set("nameAr")} className={`${adminInput} font-arabic text-[16px]`} /></div>
               <div><label htmlFor="p-desc" className={adminLabel}>{c.desc}</label><textarea id="p-desc" required maxLength={3000} rows={4} dir="ltr" value={draft.description} onChange={set("description")} className={adminInput} /></div>
@@ -110,15 +120,26 @@ export function AdminProducts() {
                 </select>
               </div>
               <div className="sm:col-span-2">
-                <label htmlFor="p-image" className={adminLabel}>{c.image}</label>
-                <input id="p-image" required maxLength={2000} dir="ltr" value={draft.image} onChange={set("image")} aria-describedby="p-image-hint" className={adminInput} />
-                <p id="p-image-hint" className="mt-1.5 text-[11px] text-[#796d68]">{c.imageHint}</p>
+                 <label htmlFor="p-image" className={adminLabel}>{c.image}</label>
+                 <div className="grid gap-4 sm:grid-cols-[140px_1fr]">
+                   <img src={draft.image || "/bareeq-editorial.jpg"} alt="" className="aspect-square w-32 border border-[#2a0006]/10 bg-[#f0f5f0] object-cover" />
+                   <div className="min-w-0">
+                     <input id="p-image" required maxLength={2000} dir="ltr" value={draft.image} onChange={set("image")} aria-describedby="p-image-hint" className={adminInput} />
+                     <p id="p-image-hint" className="mt-1.5 text-[11px] leading-5 text-[#796d68]">{c.imageHint}</p>
+                     <div className="mt-3 flex flex-wrap gap-3">
+                       <button type="button" className={ghostBtn} onClick={() => document.getElementById("p-photo-picker")?.scrollIntoView({ behavior: "smooth", block: "center" })}>{c.pick}</button>
+                       <button type="button" className="px-3 py-2 text-[11px] text-[#796d68] underline underline-offset-4" onClick={() => setDraft((d) => ({ ...d, image: "/bareeq-editorial.jpg" }))}>{c.resetImage}</button>
+                     </div>
+                     <p className="mt-2 text-[10px] text-[#796d68]">{c.resetHint}</p>
+                   </div>
+                 </div>
+                 <div id="p-photo-picker"><PhotoPicker value={draft.image} onSelect={(url) => setDraft((d) => ({ ...d, image: url }))} onBusyChange={setUploadingPhoto} /></div>
               </div>
             </fieldset>
             {formError && <p role="alert" className="mt-5 border-s-2 border-[#4a0e17] bg-[#4a0e17]/5 px-4 py-3 text-[13px] text-[#4a0e17]">{formError}</p>}
             <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-              <button type="button" className={ghostBtn} onClick={() => setEditing(null)} disabled={saving}>{c.cancel}</button>
-              <button type="submit" className={primaryBtn} disabled={saving}>{saving ? c.saving : c.save}</button>
+              <button type="button" className={ghostBtn} onClick={() => setEditing(null)} disabled={saving || uploadingPhoto}>{c.cancel}</button>
+              <button type="submit" className={primaryBtn} disabled={saving || uploadingPhoto}>{uploadingPhoto ? c.photoUploading : saving ? c.saving : c.save}</button>
             </div>
           </form>
         )}
@@ -140,8 +161,8 @@ export function AdminProducts() {
                         <p className="text-[12px] text-[#796d68]">{ar ? CATEGORY_AR[p.category] : p.category} · <span className="tabular-nums">{formatPrice(p.price, language)}</span></p>
                       </div>
                       <div className="flex shrink-0 gap-4">
-                        <button className="eyebrow text-[#2a0006] hover:text-[#456553]" onClick={() => open(p)} aria-label={`${c.edit} ${p.name}`}>{c.edit}</button>
-                        <button className="eyebrow text-[#4a0e17]/80 hover:text-[#4a0e17]" onClick={() => setToDelete(p)} aria-label={`${c.del} ${p.name}`}>{c.del}</button>
+                        <button className="eyebrow text-[#2a0006] hover:text-[#456553] disabled:opacity-40" onClick={() => open(p)} aria-label={`${c.edit} ${p.name}`} disabled={uploadingPhoto || saving || deleting}>{c.edit}</button>
+                        <button className="eyebrow text-[#4a0e17]/80 hover:text-[#4a0e17] disabled:opacity-40" onClick={() => setToDelete(p)} aria-label={`${c.del} ${p.name}`} disabled={uploadingPhoto || saving || deleting}>{c.del}</button>
                       </div>
                     </li>
                   ))}

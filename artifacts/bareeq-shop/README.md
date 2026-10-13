@@ -11,6 +11,14 @@ Keep these values in Replit Secrets, never in source files:
 - `MONGODB_URI`: the MongoDB Atlas database-user connection string.
 - `JWT_SECRET`: at least 32 random characters (64 recommended) for signed sessions.
 
+Photo storage uses Replit App Storage and its managed configuration
+(`DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PRIVATE_OBJECT_DIR`,
+`PUBLIC_OBJECT_SEARCH_PATHS`). These values must remain server-only in Secrets.
+Uploaded bytes live in App Storage, not MongoDB, Git, or local application files.
+Metadata remains in the shop's independent MongoDB database. The shop retains
+its own JWT authentication and Next.js route handlers; no Replit Auth, PostgreSQL,
+or separate Express upload server is added.
+
 The connection explicitly selects `bareeq_independent_shop`, regardless of the
 database named in the URI, to avoid using the original boutique's database.
 The Atlas database user must have read/write access to that independent database.
@@ -28,6 +36,7 @@ pnpm --filter @workspace/bareeq-shop run verify:shop
 pnpm --filter @workspace/bareeq-shop run verify:admin
 pnpm --filter @workspace/bareeq-shop run verify:sessions
 pnpm --filter @workspace/bareeq-shop run verify:unavailable-cart
+pnpm --filter @workspace/bareeq-shop run verify:photos
 ```
 
 The managed shop workflow runs `pnpm --filter @workspace/bareeq-shop run dev`.
@@ -64,8 +73,8 @@ another administrator through first-admin setup is blocked.
 
 There is no public promotion or bootstrap endpoint. Public signup always creates
 a customer and rejects role fields. You may remove `ADMIN_PASSWORD` from Secrets
-after successful setup; application runtime only needs `MONGODB_URI` and
-`JWT_SECRET`.
+after successful setup. Core shop runtime needs `MONGODB_URI` and `JWT_SECRET`;
+photo features additionally need the managed App Storage configuration above.
 
 ## Features and manual checks
 
@@ -79,9 +88,16 @@ after successful setup; application runtime only needs `MONGODB_URI` and
   Try signing out and back in to verify the saved bag.
 - `/orders` and `/orders/[id]`: protected customer-owned order history. Place an
   order from the bag and verify its saved item names, quantities and prices.
-- `/admin`: database-derived overview and protected navigation.
+- `/admin`: database-derived overview, collection counts, recent orders,
+  photo counts, and protected links to all management pages.
 - `/admin/products`: create/edit/delete bilingual products. Deletion removes a
   piece from browsing and bags, while previous order snapshots remain.
+- `/admin/photos`: upload, search, view product usage, and permanently delete
+  public product photographs. JPEG, PNG, and WebP are supported up to 5 MiB.
+  Product forms can upload/select a library photo or keep an HTTPS/local image.
+  Removing a form's photo resets the illustrative default after saving; deleting
+  a library photo permanently removes its stored file and resets all products
+  that use it. Confirmation explains this before deletion.
 - `/admin/orders`: list all orders and manually record pending/paid status.
 - `/admin/customers`: list/edit customer names and activate/deactivate accounts.
   Deactivation immediately invalidates sessions and prevents login; reactivation
@@ -101,6 +117,16 @@ Only necessary account data is stored: name, email, password hash, role/session
 state, cart and order records. API responses use explicit field allowlists and
 never expose hashes. Authentication attempts are rate-limited using expiring
 hashed identifiers. Mutating routes enforce same-origin requests.
+
+Photo upload/delete/list operations require a current database administrator role.
+Direct signed uploads go to staging with a five-minute URL. Completion checks
+the actual file bytes, type and size before publishing the verified bytes to a
+different path, so a remaining upload URL cannot overwrite a public photo.
+Only completed photos are publicly served, with explicit MIME types and
+`nosniff`. Product attachment and deletion serialize in MongoDB transactions.
+If physical deletion fails, a hidden `deleting` record remains for a visible
+retry rather than falsely reporting success. Never upload sensitive files.
+Abandoned staging uploads are not automatically cleaned up yet.
 
 ## Server routes
 

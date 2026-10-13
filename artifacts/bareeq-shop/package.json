@@ -14,6 +14,7 @@
     "verify:admin": "tsx scripts/verify-admin.ts",
     "verify:sessions": "tsx scripts/verify-session-revocation.ts",
     "verify:unavailable-cart": "tsx scripts/verify-unavailable-cart.ts",
+    "verify:photos": "tsx scripts/verify-photos.ts",
     "create-admin": "tsx scripts/create-admin.ts"
   },
   "devDependencies": {
@@ -85,6 +86,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@google-cloud/storage": "^8.4.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.12",
     "mongoose": "^9.11.1",

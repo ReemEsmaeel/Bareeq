@@ -51,4 +51,20 @@ export type AdminSummary = {
   orders: number;
   pendingOrders: number;
   orderValue: number;
+  paidOrders: number;
+  activeCustomers: number;
+  photoCount: number;
+  latestOrders: ShopOrder[];
+  collections: { category: ShopProduct["category"]; count: number }[];
+};
+
+export type AdminPhoto = {
+  id: string;
+  url: string;
+  name: string;
+  size: number;
+  contentType: string;
+  status: "ready" | "deleting";
+  usedBy: { id: string; name: string; nameAr: string }[];
+  createdAt: string;
 };

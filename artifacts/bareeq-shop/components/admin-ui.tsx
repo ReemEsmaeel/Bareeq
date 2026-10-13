@@ -7,8 +7,8 @@ import { InlineError, SignInPrompt, StateBlock, ghostBtn, primaryBtn } from "./s
 import { useShop } from "./shop-provider";
 
 const nav = {
-  en: { label: "Atelier admin", items: [["/admin", "Overview"], ["/admin/products", "Pieces"], ["/admin/orders", "Orders"], ["/admin/customers", "Customers"]] },
-  ar: { label: "إدارة الأتيليه", items: [["/admin", "نظرة عامة"], ["/admin/products", "القطع"], ["/admin/orders", "الطلبات"], ["/admin/customers", "العملاء"]] },
+  en: { label: "Atelier admin", items: [["/admin", "Overview"], ["/admin/products", "Pieces"], ["/admin/photos", "Photo library"], ["/admin/orders", "Orders"], ["/admin/customers", "Customers"]] },
+  ar: { label: "إدارة الأتيليه", items: [["/admin", "نظرة عامة"], ["/admin/products", "القطع"], ["/admin/photos", "مكتبة الصور"], ["/admin/orders", "الطلبات"], ["/admin/customers", "العملاء"]] },
 };
 
 export function AdminNav() {
@@ -29,6 +29,9 @@ export function AdminNav() {
           );
         })}
       </nav>
+      <Link href="/" className="mt-3 inline-flex text-[10px] font-semibold uppercase tracking-[.13em] text-[#796d68] transition-colors hover:text-[#456553] lg:mt-5">
+        {language === "ar" ? "العودة إلى المتجر ←" : "← Back to storefront"}
+      </Link>
     </aside>
   );
 }

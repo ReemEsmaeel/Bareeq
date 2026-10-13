@@ -4,6 +4,7 @@ import { checkOrigin, handle, HttpError, validId } from "@/lib/http";
 import { productInput } from "@/lib/validation";
 import { publicProduct } from "@/lib/serialize";
 import { Product } from "@/models/Product";
+import { saveProductWithPhoto } from "@/lib/photos";
 
 export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   return handle(async () => {
@@ -12,8 +13,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const { id } = await context.params;
     validId(id);
     const data = productInput.parse(await request.json());
-    const product = await Product.findByIdAndUpdate(id, { $set: data }, { returnDocument: "after", runValidators: true });
-    if (!product) throw new HttpError(404, "This piece was not found.");
+    const product = await saveProductWithPhoto(data, id);
     return publicProduct(product);
   });
 }
