@@ -3,4 +3,7 @@
 
 # No need to store the pnpm store twice.
 .local
-**/.next
+# Next.js needs its compiled production build at runtime.
+# Keep .next/BUILD_ID, server and static output; omit only dev/cache files.
+**/.next/dev
+**/.next/cache

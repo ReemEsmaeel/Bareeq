@@ -14,3 +14,9 @@ Next.js detects an empty `src/pages` directory. Removing its last file does not 
 **Why:** This caused the preview to start listening and then exit despite a passing type check.
 
 **How to apply:** Check leftover scaffold directories when Next.js reports that app and pages must be under the same folder.
+
+Keep Next.js production output out of Git, but include it in the published runtime image. Do not exclude the entire `.next` folder in `.replitignore`; exclude only its development and cache directories.
+
+**Why:** A publishing build compiled successfully, then failed during startup because the image exclusion rules removed the compiled production build. `next start` requires that output even though it is generated.
+
+**How to apply:** Treat Git exclusions and publishing exclusions separately. Confirm the packaged output retains `BUILD_ID`, server and static files, and verify the production start command before suggesting another publish attempt.
