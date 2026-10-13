@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { ShopProvider } from "@/components/shop-provider";
+import { SiteHeader } from "@/components/site-header";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,8 +15,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" dir="ltr">
-      <body className="min-h-[100dvh]">{children}</body>
+    <html lang="en" dir="ltr" suppressHydrationWarning>
+      <body className="min-h-[100dvh]">
+        <ShopProvider>
+          <SiteHeader />
+          {children}
+        </ShopProvider>
+      </body>
     </html>
   );
 }

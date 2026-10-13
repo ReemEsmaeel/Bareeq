@@ -1,9 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useShop } from "@/components/shop-provider";
 
-type Language = "en" | "ar";
 
 const copy = {
   en: {
@@ -106,70 +105,13 @@ function ArrowIcon({ diagonal = false }: { diagonal?: boolean }) {
 }
 
 export default function HomePage() {
-  const [language, setLanguage] = useState<Language>("en");
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { language } = useShop();
   const text = copy[language];
   const isArabic = language === "ar";
 
-  useEffect(() => {
-    document.documentElement.lang = language;
-    document.documentElement.dir = text.languageDirection;
-  }, [language, text.languageDirection]);
 
   return (
     <main className={`page-grain overflow-hidden ${isArabic ? "arabic-page" : ""}`} dir={text.languageDirection}>
-      <div className="flex min-h-[30px] items-center justify-center bg-[#2a0006] px-4 py-2 text-center text-[9px] font-semibold tracking-[.14em] text-[#f6fbf5] sm:text-[10px]">
-        {text.announcement}
-      </div>
-      <header className="relative z-30 border-b border-[#2a0006]/10 bg-[#f6fbf5]">
-        <div className="mx-auto flex h-[74px] max-w-[1440px] items-center justify-between px-5 sm:px-9 lg:h-[88px] lg:px-[7.1%]">
-          <button
-            aria-label={menuOpen ? text.close : text.menu}
-            className="flex h-10 w-10 items-center justify-center text-[#2a0006] lg:hidden"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            {menuOpen ? (
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" strokeWidth="1.3" /></svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" strokeWidth="1.3" /></svg>
-            )}
-          </button>
-          <nav aria-label="Main navigation" className="hidden items-center gap-9 lg:flex">
-            <a className="eyebrow transition-colors hover:text-[#456553]" href="#story">{text.nav[0]}</a>
-            <a className="eyebrow transition-colors hover:text-[#456553]" href="#collections">{text.nav[1]}</a>
-          </nav>
-          <a href="#" aria-label="Bareeq Atelier home" className="absolute left-1/2 -translate-x-1/2 text-center text-[#2a0006]">
-            <span className="block font-display text-[27px] font-medium leading-none tracking-[.08em] sm:text-[31px]">BAREEQ</span>
-            <span className="mt-[5px] block text-[8px] font-semibold tracking-[.34em]">ATELIER</span>
-          </a>
-          <div className="flex items-center gap-3 sm:gap-7">
-            <nav aria-label="More navigation" className="hidden lg:block">
-              <a className="eyebrow transition-colors hover:text-[#456553]" href="#letter">{text.nav[2]}</a>
-            </nav>
-            <button
-              className="rounded-full border border-[#2a0006]/20 px-3.5 py-2 text-[10px] font-semibold tracking-[.08em] text-[#2a0006] transition-colors hover:bg-[#2a0006] hover:text-[#f6fbf5] sm:px-4"
-              onClick={() => setLanguage(isArabic ? "en" : "ar")}
-              aria-label={isArabic ? "Switch language to English" : "التبديل إلى العربية"}
-            >
-              {text.langButton}
-            </button>
-          </div>
-        </div>
-        {menuOpen && (
-          <nav aria-label="Mobile navigation" className="absolute inset-x-0 top-full border-t border-[#2a0006]/10 bg-[#f6fbf5] px-6 py-5 shadow-lg shadow-[#2a0006]/5 lg:hidden">
-            {[...text.nav.slice(0, 2), text.nav[2]].map((label, index) => (
-              <a
-                key={label}
-                href={["#story", "#collections", "#letter"][index]}
-                onClick={() => setMenuOpen(false)}
-                className="block border-b border-[#2a0006]/10 py-4 font-display text-xl text-[#2a0006]"
-              >
-                {label}
-              </a>
-            ))}
-          </nav>
-        )}
-      </header>
 
       <section className="relative mx-auto grid max-w-[1440px] items-center gap-10 px-5 pb-[74px] pt-12 sm:px-9 sm:pb-24 sm:pt-16 lg:min-h-[650px] lg:grid-cols-[.93fr_1.07fr] lg:gap-12 lg:px-[10%] lg:pb-[90px] lg:pt-[74px]">
         <div className={`relative z-10 max-w-[510px] ${isArabic ? "lg:order-2" : ""}`}>

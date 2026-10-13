@@ -1,3 +1,6 @@
 {
+  "/api/shop/account/route": "app/api/shop/account/route.js",
+  "/api/shop/auth/me/route": "app/api/shop/auth/me/route.js",
+  "/api/shop/auth/signup/route": "app/api/shop/auth/signup/route.js",
   "/page": "app/page.js"
 }
