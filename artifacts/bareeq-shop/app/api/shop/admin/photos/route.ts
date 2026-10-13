@@ -6,7 +6,7 @@ import { Product } from "@/models/Product";
 
 export async function GET() {
   return handle(async () => {
-    await requireAdmin();
+    await requireAdmin("photos");
     const [photos, products] = await Promise.all([
       Photo.find({ status: { $in: ["ready", "deleting"] } }).sort({ createdAt: -1 }).lean(),
       Product.find({ image: /^\/api\/shop\/media\// }).select("name nameAr image").lean(),

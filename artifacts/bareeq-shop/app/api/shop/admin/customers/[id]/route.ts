@@ -9,7 +9,7 @@ import { User } from "@/models/User";
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     checkOrigin(request);
-    await requireAdmin();
+    await requireAdmin("customers");
     const { id } = await context.params;
     validId(id);
     const data = z.object({ name: nameInput, active: z.boolean() }).strict().parse(await request.json());

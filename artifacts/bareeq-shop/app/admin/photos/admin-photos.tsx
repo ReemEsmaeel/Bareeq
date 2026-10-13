@@ -9,6 +9,7 @@ import { useScopedResource } from "@/components/use-fresh";
 import { ApiError, api } from "@/lib/client";
 import { uploadPhotoFile } from "@/components/photo-picker";
 import type { AdminPhoto } from "@/lib/types";
+import { hasPermission } from "@/lib/permissions";
 
 const t = {
   en: {
@@ -31,6 +32,8 @@ export function AdminPhotos() {
   const { language, user, authLoading } = useShop();
   const c = t[language];
   const ar = language === "ar";
+  const canManagePhotos = hasPermission(user, "photos");
+  const permissionsKey = user?.permissions.join(",") ?? "";
   const resource = useScopedResource<AdminPhoto[]>("/admin/photos");
   const [query, setQuery] = useState("");
   const [toDelete, setToDelete] = useState<AdminPhoto | null>(null);
@@ -40,12 +43,12 @@ export function AdminPhotos() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const identityRef = useRef({ id: user?.id, role: user?.role, active: user?.active, authLoading });
-  identityRef.current = { id: user?.id, role: user?.role, active: user?.active, authLoading };
+  const identityRef = useRef({ id: user?.id, role: user?.role, roleId: user?.roleId, permissionsKey, active: user?.active, authLoading });
+  identityRef.current = { id: user?.id, role: user?.role, roleId: user?.roleId, permissionsKey, active: user?.active, authLoading };
 
   useEffect(() => {
     setToDelete(null); setNotice(null); setError(""); setQuery(""); setBusyUpload(false); setProgress(0);
-  }, [user?.id, user?.role, user?.active, authLoading]);
+  }, [user?.id, user?.role, user?.roleId, permissionsKey, user?.active, authLoading]);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
@@ -56,7 +59,8 @@ export function AdminPhotos() {
     if (!file) return;
     const resourceGuard = resource.scopeGuard();
     const scopeId = user?.id;
-    const guard = () => resourceGuard() && identityRef.current.id === scopeId && identityRef.current.role === "admin" && identityRef.current.active && !identityRef.current.authLoading;
+    const roleId = user?.roleId;
+    const guard = () => resourceGuard() && identityRef.current.id === scopeId && identityRef.current.roleId === roleId && identityRef.current.permissionsKey === permissionsKey && identityRef.current.role === user?.role && hasPermission(user, "photos") && identityRef.current.active && !identityRef.current.authLoading;
     setBusyUpload(true); setProgress(0); setError(""); setNotice(null);
     try {
       await uploadPhotoFile(file, (value) => { if (guard()) setProgress(value); });
@@ -73,7 +77,11 @@ export function AdminPhotos() {
   async function remove() {
     if (!toDelete) return;
     const photo = toDelete;
-    const guard = resource.scopeGuard();
+    const resourceGuard = resource.scopeGuard();
+    const scopeId = user?.id;
+    const roleId = user?.roleId;
+    const guard = () => resourceGuard() && identityRef.current.id === scopeId && identityRef.current.roleId === roleId && identityRef.current.permissionsKey === permissionsKey && identityRef.current.role === user?.role && identityRef.current.active && !identityRef.current.authLoading;
+    if (!canManagePhotos) return;
     setBusyDelete(true); setError("");
     try {
       await api<{ success: true }>(`/admin/photos/${photo.id}`, { method: "DELETE" });
@@ -94,7 +102,7 @@ export function AdminPhotos() {
   return (
     <>
       <AdminHeader kicker={c.kicker} title={c.title}>
-        <button className={primaryBtn} onClick={() => fileRef.current?.click()} disabled={busyUpload || user?.role !== "admin" || resource.status !== "ready"}>{busyUpload ? progress >= 100 ? c.verifying : `${c.busy} · ${progress}%` : c.upload}</button>
+        <button className={primaryBtn} onClick={() => fileRef.current?.click()} disabled={busyUpload || !canManagePhotos || resource.status !== "ready"}>{busyUpload ? progress >= 100 ? c.verifying : `${c.busy} · ${progress}%` : c.upload}</button>
       </AdminHeader>
       <div className="mt-8">
         {notice && <Notice tone={notice.tone} text={notice.text} />}
@@ -134,7 +142,7 @@ export function AdminPhotos() {
                           <Link href="/admin/products" className="mt-1 inline-block text-[10px] font-semibold text-[#456553] underline underline-offset-2">{c.products}</Link>
                         </div>
                       ) : <p className="mt-3 border-t border-[#2a0006]/10 pt-3 text-[10px] text-[#796d68]">{c.unused}</p>}
-                      <button type="button" className="mt-3 w-full border-t border-[#2a0006]/10 pt-3 text-start text-[10px] font-semibold text-[#4a0e17] underline underline-offset-2 disabled:opacity-50" onClick={() => setToDelete(photo)} disabled={busyDelete || user?.role !== "admin"}>
+                      <button type="button" className="mt-3 w-full border-t border-[#2a0006]/10 pt-3 text-start text-[10px] font-semibold text-[#4a0e17] underline underline-offset-2 disabled:opacity-50" onClick={() => setToDelete(photo)} disabled={busyDelete || !canManagePhotos}>
                         {photo.status === "deleting" ? c.retry : c.delete}
                       </button>
                     </div>

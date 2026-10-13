@@ -29,7 +29,9 @@ export async function POST(request: NextRequest) {
     try {
       await session.withTransaction(async () => {
         const user = await User.findById(sessionUser._id).session(session);
-        if (!user?.active) throw new HttpError(401, "Please sign in again.");
+        if (!user?.active || user.authVersion !== sessionUser.authVersion) {
+          throw new HttpError(401, "Your session is no longer valid. Please sign in again.");
+        }
         const cart = await readCart(user, session);
         if (!cart.items.length) throw new HttpError(400, "Your bag is empty.");
         if (cart.quote !== quote) {

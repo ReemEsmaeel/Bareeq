@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { useShop } from "./shop-provider";
+import { hasAdminAccess } from "@/lib/permissions";
 
 const labels = {
   en: {
@@ -52,7 +53,7 @@ export function SiteHeader() {
     { href: "/products", label: t.products },
     { href: "/cart", label: t.cart },
     ...(user ? [{ href: "/orders", label: t.orders }] : []),
-    ...(user?.role === "admin" ? [{ href: "/admin", label: t.admin }] : []),
+    ...(hasAdminAccess(user) ? [{ href: "/admin", label: t.admin }] : []),
   ];
   const linkClass = (href: string) =>
     `eyebrow transition-colors hover:text-[#456553] ${pathname === href ? "text-[#456553]" : ""}`;

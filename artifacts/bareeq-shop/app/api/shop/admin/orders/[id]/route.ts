@@ -8,7 +8,7 @@ import { Order } from "@/models/Order";
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     checkOrigin(request);
-    await requireAdmin();
+    await requireAdmin("orders");
     const { id } = await context.params;
     validId(id);
     const data = z.object({ status: z.enum(["pending", "paid"]) }).strict().parse(await request.json());

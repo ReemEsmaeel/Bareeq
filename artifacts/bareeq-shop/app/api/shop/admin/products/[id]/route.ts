@@ -9,7 +9,7 @@ import { saveProductWithPhoto } from "@/lib/photos";
 export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     checkOrigin(request);
-    await requireAdmin();
+    await requireAdmin("products");
     const { id } = await context.params;
     validId(id);
     const data = productInput.parse(await request.json());
@@ -21,7 +21,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     checkOrigin(request);
-    await requireAdmin();
+    await requireAdmin("products");
     const { id } = await context.params;
     validId(id);
     const product = await Product.findByIdAndDelete(id);

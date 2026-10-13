@@ -15,7 +15,7 @@ const input = z.object({
 export async function POST(request: NextRequest) {
   return handle(async () => {
     checkOrigin(request);
-    const admin = await requireAdmin();
+    const admin = await requireAdmin("photos");
     const data = input.parse(await request.json());
     await rateLimit(request, "photo-upload", 30, 15, String(admin._id));
     const photo = await Photo.create({ ...data, expiresAt: new Date(Date.now() + 15 * 60000) });

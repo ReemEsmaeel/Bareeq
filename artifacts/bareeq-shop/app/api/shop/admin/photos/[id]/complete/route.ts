@@ -9,7 +9,7 @@ import { Photo } from "@/models/Photo";
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     checkOrigin(request);
-    await requireAdmin();
+    await requireAdmin("photos");
     z.object({}).strict().parse(await request.json());
     const { id } = await context.params;
     validId(id);

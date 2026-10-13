@@ -31,6 +31,7 @@ export async function PATCH(request: NextRequest) {
     );
     if (!updated) throw new HttpError(409, "Your account changed. Refresh or sign in again before saving.");
     await setSession(updated);
+    await updated.populate("roleId", "name nameAr permissions");
     return publicUser(updated);
   });
 }

@@ -2,3 +2,4 @@
 - [Next.js artifact hosting](next-artifact-hosting.md) — dynamic hosting schema and empty pages-directory detection can block a Next.js scaffold.
 - [Session revision safety](session-revision-safety.md) — atomic session invalidation prevents concurrent sensitive changes from keeping earlier tokens valid.
 - [Secret confirmation checks](secret-confirmation-checks.md) — secure-form confirmation proves presence, not that the saved value was replaced or is valid.
+- [Custom role scope](custom-role-scope.md) — the user chose configurable custom roles, not Admin/Customer-only access management.

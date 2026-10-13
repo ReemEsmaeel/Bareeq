@@ -8,7 +8,7 @@ import { saveProductWithPhoto } from "@/lib/photos";
 
 export async function GET() {
   return handle(async () => {
-    await requireAdmin();
+    await requireAdmin("products");
     return (await Product.find().sort({ createdAt: -1 }).lean()).map(publicProduct);
   });
 }
@@ -16,7 +16,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   return handle(async () => {
     checkOrigin(request);
-    await requireAdmin();
+    await requireAdmin("products");
     const data = productInput.parse(await request.json());
     return publicProduct(await saveProductWithPhoto(data));
   }, 201);

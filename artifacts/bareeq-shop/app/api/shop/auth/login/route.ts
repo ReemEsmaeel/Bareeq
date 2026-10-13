@@ -6,6 +6,7 @@ import { loginInput } from "@/lib/validation";
 import { rateLimit } from "@/lib/rate-limit";
 import { assertSessionConfig, setSession } from "@/lib/auth";
 import { publicUser } from "@/lib/serialize";
+import { Role } from "@/models/Role";
 
 export async function POST(request: NextRequest) {
   return handle(async () => {
@@ -13,7 +14,8 @@ export async function POST(request: NextRequest) {
     assertSessionConfig();
     const data = loginInput.parse(await request.json());
     await rateLimit(request, "login", 12, 10, data.email);
-    const user = await User.findOne({ email: data.email }).select("+passwordHash");
+    void Role;
+    const user = await User.findOne({ email: data.email }).select("+passwordHash").populate("roleId", "name nameAr permissions");
     const matches = user
       ? await bcrypt.compare(data.password, user.passwordHash)
       : (await bcrypt.hash(data.password, 12), false);

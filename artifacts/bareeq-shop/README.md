@@ -37,6 +37,8 @@ pnpm --filter @workspace/bareeq-shop run verify:admin
 pnpm --filter @workspace/bareeq-shop run verify:sessions
 pnpm --filter @workspace/bareeq-shop run verify:unavailable-cart
 pnpm --filter @workspace/bareeq-shop run verify:photos
+pnpm --filter @workspace/bareeq-shop run verify:settings
+pnpm --filter @workspace/bareeq-shop run verify:order-protection
 ```
 
 The managed shop workflow runs `pnpm --filter @workspace/bareeq-shop run dev`.
@@ -88,6 +90,11 @@ photo features additionally need the managed App Storage configuration above.
   Try signing out and back in to verify the saved bag.
 - `/orders` and `/orders/[id]`: protected customer-owned order history. Place an
   order from the bag and verify its saved item names, quantities and prices.
+  Both pages require a valid signed session before rendering. Missing, tampered,
+  expired or revoked tokens redirect to login, preserving the requested page.
+  The matching APIs return 401 without a valid session and never return another
+  customer's orders. Tokens must include issue-time, expiry and session-revision
+  claims, and be no older than seven days.
 - `/admin`: database-derived overview, collection counts, recent orders,
   photo counts, and protected links to all management pages.
 - `/admin/products`: create/edit/delete bilingual products. Deletion removes a
@@ -102,6 +109,26 @@ photo features additionally need the managed App Storage configuration above.
 - `/admin/customers`: list/edit customer names and activate/deactivate accounts.
   Deactivation immediately invalidates sessions and prevents login; reactivation
   requires a new login. Orders remain. No role or password-hash editing is exposed.
+- `/admin/settings`: add/edit/delete admin and staff accounts, assign roles,
+  activate/deactivate accounts, and set/reset passwords. Create/edit/delete
+  bilingual custom roles with Products, Photos, Orders, Customers, and Admin
+  Settings permissions. The built-in Administrator and Customer roles are
+  immutable. Delete confirmations explain permanent removal of login/profile/
+  cart data; historical order snapshots remain.
+
+Custom role permissions are resolved from MongoDB on every authorized server
+request. A signed JWT carries an identity/session revision, not trusted roles.
+Admin navigation and overview data are permission-filtered; APIs and individual
+server pages enforce the same restrictions. Settings managers cannot grant
+permissions they do not have or manage higher-privilege accounts/roles. Only a
+full built-in Administrator can create or manage other full administrators.
+Assigned custom roles cannot be deleted until their accounts are reassigned or
+removed. Account role, email, password or activation changes revoke old sessions;
+permission changes revoke sessions for every account assigned to that role.
+Self role changes, deactivation and deletion are blocked. A shared transactional
+lock serializes access changes, re-checks the actor, and preserves at least one
+active full administrator even during concurrent requests. Public signup still
+creates customers only; administrator creation is not public.
 
 Order placement records a pending order in MongoDB and atomically clears the bag.
 All prices are computed server-side. A changed bag or price must be reviewed

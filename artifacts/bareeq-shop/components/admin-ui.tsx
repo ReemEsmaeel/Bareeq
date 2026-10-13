@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, type ReactNode } from "react";
 import { InlineError, SignInPrompt, StateBlock, ghostBtn, primaryBtn } from "./shop-ui";
 import { useShop } from "./shop-provider";
+import { hasAdminAccess, hasPermission } from "@/lib/permissions";
 
 const nav = {
   en: { label: "Atelier admin", items: [["/admin", "Overview"], ["/admin/products", "Pieces"], ["/admin/photos", "Photo library"], ["/admin/orders", "Orders"], ["/admin/customers", "Customers"]] },
@@ -12,14 +13,24 @@ const nav = {
 };
 
 export function AdminNav() {
-  const { language } = useShop();
+  const { language, user } = useShop();
   const pathname = usePathname();
   const n = nav[language];
+  const items = n.items.filter(([href]) => {
+    if (href === "/admin") return hasAdminAccess(user);
+    if (href === "/admin/products") return hasPermission(user, "products");
+    if (href === "/admin/photos") return hasPermission(user, "photos");
+    if (href === "/admin/orders") return hasPermission(user, "orders");
+    if (href === "/admin/customers") return hasPermission(user, "customers");
+    return true;
+  });
+  const settingsLabel = language === "ar" ? "إعدادات الإدارة" : "Admin settings";
+  if (hasPermission(user, "settings")) items.push(["/admin/settings", settingsLabel]);
   return (
     <aside className="lg:sticky lg:top-8 lg:h-fit">
       <p className="eyebrow text-[#456553]">{n.label}</p>
       <nav aria-label={n.label} className="-mx-5 mt-4 flex gap-1 overflow-x-auto border-b border-[#2a0006]/10 px-5 lg:mx-0 lg:flex-col lg:gap-0 lg:border-b-0 lg:border-s lg:px-0">
-        {n.items.map(([href, label]) => {
+        {items.map(([href, label]) => {
           const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
           return (
             <Link key={href} href={href} aria-current={active ? "page" : undefined}

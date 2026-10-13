@@ -9,6 +9,7 @@ import { PhotoPicker } from "@/components/photo-picker";
 import { ApiError, api } from "@/lib/client";
 import { CATEGORIES, CATEGORY_AR, formatPrice, type Category } from "@/lib/format";
 import type { ShopProduct } from "@/lib/types";
+import { hasPermission } from "@/lib/permissions";
 
 type Draft = { name: string; nameAr: string; description: string; descriptionAr: string; price: string; image: string; category: Category };
 const empty: Draft = { name: "", nameAr: "", description: "", descriptionAr: "", price: "", image: "", category: "Lujain" };
@@ -22,6 +23,7 @@ export function AdminProducts() {
   const { language, user, authLoading } = useShop();
   const c = t[language];
   const ar = language === "ar";
+  const canManagePhotos = hasPermission(user, "photos");
   const r = useScopedResource<ShopProduct[]>("/admin/products");
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<ShopProduct | "new" | null>(null);
@@ -133,7 +135,7 @@ export function AdminProducts() {
                      <p className="mt-2 text-[10px] text-[#796d68]">{c.resetHint}</p>
                    </div>
                  </div>
-                 <div id="p-photo-picker"><PhotoPicker value={draft.image} onSelect={(url) => setDraft((d) => ({ ...d, image: url }))} onBusyChange={setUploadingPhoto} /></div>
+                  {canManagePhotos && <div id="p-photo-picker"><PhotoPicker value={draft.image} onSelect={(url) => setDraft((d) => ({ ...d, image: url }))} onBusyChange={setUploadingPhoto} /></div>}
               </div>
             </fieldset>
             {formError && <p role="alert" className="mt-5 border-s-2 border-[#4a0e17] bg-[#4a0e17]/5 px-4 py-3 text-[13px] text-[#4a0e17]">{formError}</p>}

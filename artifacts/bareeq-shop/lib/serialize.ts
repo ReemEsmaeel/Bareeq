@@ -1,4 +1,5 @@
 import type { ShopOrder, ShopProduct, ShopUser } from "./types";
+import { permissionsFor } from "./permissions";
 
 // Explicit allowlists prevent password hashes and internal session fields leaking.
 export function publicUser(user: any): ShopUser {
@@ -7,6 +8,10 @@ export function publicUser(user: any): ShopUser {
     name: user.name,
     email: user.email,
     role: user.role,
+    roleId: user.role === "staff" ? String(user.roleId?._id || user.roleId || "") : user.role,
+    roleName: user.role === "admin" ? "Administrator" : user.role === "customer" ? "Customer" : user.roleId?.name || "Staff",
+    roleNameAr: user.role === "admin" ? "مدير" : user.role === "customer" ? "عميل" : user.roleId?.nameAr || "فريق العمل",
+    permissions: permissionsFor(user),
     active: user.active,
     createdAt: new Date(user.createdAt).toISOString(),
   };

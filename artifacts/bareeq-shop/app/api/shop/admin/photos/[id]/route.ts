@@ -9,7 +9,7 @@ import { Product } from "@/models/Product";
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   return handle(async () => {
     checkOrigin(request);
-    await requireAdmin();
+    await requireAdmin("photos");
     const { id } = await context.params;
     validId(id);
     const session = await mongoose.startSession();

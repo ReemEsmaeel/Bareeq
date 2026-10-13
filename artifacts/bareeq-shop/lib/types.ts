@@ -1,8 +1,14 @@
+import type { AdminPermission } from "./permissions";
+
 export type ShopUser = {
   id: string;
   name: string;
   email: string;
-  role: "customer" | "admin";
+  role: "customer" | "admin" | "staff";
+  roleId: string;
+  roleName: string;
+  roleNameAr: string;
+  permissions: AdminPermission[];
   active: boolean;
   createdAt: string;
 };
@@ -46,16 +52,28 @@ export type ShopOrder = {
 };
 
 export type AdminSummary = {
-  products: number;
-  customers: number;
-  orders: number;
-  pendingOrders: number;
-  orderValue: number;
-  paidOrders: number;
-  activeCustomers: number;
-  photoCount: number;
+  products: number | null;
+  customers: number | null;
+  orders: number | null;
+  pendingOrders: number | null;
+  orderValue: number | null;
+  paidOrders: number | null;
+  activeCustomers: number | null;
+  photoCount: number | null;
   latestOrders: ShopOrder[];
   collections: { category: ShopProduct["category"]; count: number }[];
+};
+
+export type AdminAccount = ShopUser & { manageable: boolean };
+
+export type AdminRole = {
+  id: string;
+  name: string;
+  nameAr: string;
+  permissions: AdminPermission[];
+  builtin: boolean;
+  assignedUsers: number;
+  editable: boolean;
 };
 
 export type AdminPhoto = {

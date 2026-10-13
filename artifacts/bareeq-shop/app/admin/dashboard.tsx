@@ -6,6 +6,7 @@ import { useShop } from "@/components/shop-provider";
 import { useScopedResource } from "@/components/use-fresh";
 import { formatPrice } from "@/lib/format";
 import type { AdminSummary } from "@/lib/types";
+import { hasPermission } from "@/lib/permissions";
 
 const t = {
   en: {
@@ -27,25 +28,33 @@ const t = {
 };
 
 export function AdminDashboard() {
-  const { language } = useShop();
+  const { language, user } = useShop();
   const c = t[language];
   const ar = language === "ar";
+  const canProducts = hasPermission(user, "products");
+  const canCustomers = hasPermission(user, "customers");
+  const canOrders = hasPermission(user, "orders");
+  const canPhotos = hasPermission(user, "photos");
+  const canSettings = hasPermission(user, "settings");
   const resource = useScopedResource<AdminSummary>("/admin/summary");
   const summary = resource.data;
   const metrics = summary ? [
-    { label: c.products, number: summary.products, href: "/admin/products", sign: "01" },
-    { label: c.customers, number: summary.customers, href: "/admin/customers", sign: "02" },
-    { label: c.orders, number: summary.orders, href: "/admin/orders", sign: "03" },
-    { label: c.pending, number: summary.pendingOrders, href: "/admin/orders", sign: "04" },
-    { label: c.paid, number: summary.paidOrders, href: "/admin/orders", sign: "05" },
-    { label: c.active, number: summary.activeCustomers, href: "/admin/customers", sign: "06" },
-    { label: c.photos, number: summary.photoCount, href: "/admin/photos", sign: "07" },
+    ...(canProducts && summary.products !== null ? [{ label: c.products, number: summary.products, href: "/admin/products", sign: "01" }] : []),
+    ...(canCustomers && summary.customers !== null ? [{ label: c.customers, number: summary.customers, href: "/admin/customers", sign: "02" }] : []),
+    ...(canOrders && summary.orders !== null ? [
+      { label: c.orders, number: summary.orders, href: "/admin/orders", sign: "03" },
+      ...(summary.pendingOrders !== null ? [{ label: c.pending, number: summary.pendingOrders, href: "/admin/orders", sign: "04" }] : []),
+      ...(summary.paidOrders !== null ? [{ label: c.paid, number: summary.paidOrders, href: "/admin/orders", sign: "05" }] : []),
+    ] : []),
+    ...(canCustomers && summary.activeCustomers !== null ? [{ label: c.active, number: summary.activeCustomers, href: "/admin/customers", sign: "06" }] : []),
+    ...(canPhotos && summary.photoCount !== null ? [{ label: c.photos, number: summary.photoCount, href: "/admin/photos", sign: "07" }] : []),
   ] : [];
   return (
     <>
       <AdminHeader kicker={c.kicker} title={c.title}>
         <div className="flex flex-wrap gap-2">
-          <Link href="/admin/products?new=1" className="inline-flex min-h-11 items-center bg-[#2a0006] px-5 text-[12px] font-semibold text-[#f6fbf5] transition-colors hover:bg-[#456553]">{c.add}</Link>
+          {canProducts && <Link href="/admin/products?new=1" className="inline-flex min-h-11 items-center bg-[#2a0006] px-5 text-[12px] font-semibold text-[#f6fbf5] transition-colors hover:bg-[#456553]">{c.add}</Link>}
+          {canSettings && <Link href="/admin/settings" className="inline-flex min-h-11 items-center border border-[#456553]/40 px-5 text-[12px] font-semibold text-[#456553] transition-colors hover:bg-[#456553]/10">{ar ? "إعدادات الإدارة" : "Admin settings"}</Link>}
           <Link href="/" className="inline-flex min-h-11 items-center border border-[#2a0006]/20 px-5 text-[12px] font-semibold text-[#2a0006] transition-colors hover:border-[#456553] hover:text-[#456553]">{c.storefront}</Link>
         </div>
       </AdminHeader>
@@ -53,7 +62,7 @@ export function AdminDashboard() {
         <AdminLoadState status={resource.status} errorStatus={resource.errorStatus} error={resource.error} hasData={!!summary} onRetry={() => void resource.reload()} next="/admin" skeleton={<div className="grid grid-cols-2 gap-px bg-[#2a0006]/10 sm:grid-cols-3 lg:grid-cols-4" aria-hidden="true">{Array.from({ length: 7 }, (_, i) => <div key={i} className="h-28 animate-pulse bg-[#f0f5f0]" />)}</div>} />
         {summary && (
           <>
-            <section aria-label={c.products} className="grid grid-cols-2 gap-px bg-[#2a0006]/10 sm:grid-cols-3 lg:grid-cols-4">
+            {metrics.length > 0 && <section aria-label={ar ? "ملخص الإدارة" : "Admin summary"} className="grid grid-cols-2 gap-px bg-[#2a0006]/10 sm:grid-cols-3 lg:grid-cols-4">
               {metrics.map((metric, index) => (
                 <Link key={metric.sign} href={metric.href} className={`group relative min-h-28 bg-[#f0f5f0] p-4 transition-colors hover:bg-[#e9f0e9] sm:p-5 ${index === 0 ? "row-span-2 flex min-h-[14.5rem] flex-col justify-between bg-[#e8eee7] sm:min-h-[14.5rem]" : ""}`}>
                   <span className="eyebrow text-[#456553]/75">{metric.sign}</span>
@@ -62,21 +71,21 @@ export function AdminDashboard() {
                   <span className="absolute end-4 top-4 text-[#456553] opacity-0 transition-opacity group-hover:opacity-100" aria-hidden="true">↗</span>
                 </Link>
               ))}
-              <Link href="/admin/photos" className="flex min-h-28 flex-col justify-between bg-[#456553] p-5 text-[#f6fbf5] transition-colors hover:bg-[#355443]">
+              {canPhotos && <Link href="/admin/photos" className="flex min-h-28 flex-col justify-between bg-[#456553] p-5 text-[#f6fbf5] transition-colors hover:bg-[#355443]">
                 <span className="eyebrow text-[#f6fbf5]/70">{ar ? "الصورة العامة" : "THE PUBLIC IMAGE"}</span>
                 <span className="font-display text-[18px] leading-tight">{ar ? "إدارة صور المنتجات" : "Manage product photography"}</span>
                 <span className="text-[11px] text-[#f6fbf5]/75">{ar ? "مكتبة الصور ←" : "Open photo library →"}</span>
-              </Link>
-            </section>
+              </Link>}
+            </section>}
 
-            <section className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(240px,.7fr)]">
-              <div className="bg-[#2a0006] p-6 text-[#f6fbf5] sm:p-8">
+            {(canOrders && summary.orderValue !== null || canProducts) && <section className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(240px,.7fr)]">
+              {canOrders && summary.orderValue !== null && <div className="bg-[#2a0006] p-6 text-[#f6fbf5] sm:p-8">
                 <p className="eyebrow text-[#b7c6b6]">{c.value}</p>
                 <p className="mt-3 font-display text-[clamp(2.2rem,5vw,3.8rem)] leading-none tabular-nums">{formatPrice(summary.orderValue, language)}</p>
                 <p className="mt-4 max-w-[560px] text-[11px] leading-[1.8] text-[#f6fbf5]/65">{c.valueNote}</p>
                 <p className="mt-6 border-t border-[#f6fbf5]/15 pt-4 text-[11px] text-[#b7c6b6]">{c.note}</p>
-              </div>
-              <div className="border border-[#2a0006]/10 bg-[#f0f5f0] p-6 sm:p-7">
+              </div>}
+              {canProducts && <div className="border border-[#2a0006]/10 bg-[#f0f5f0] p-6 sm:p-7">
                 <p className="eyebrow text-[#456553]">{c.collection}</p>
                 <ul className="mt-5 divide-y divide-[#2a0006]/10">
                   {summary.collections.map((item) => (
@@ -87,10 +96,11 @@ export function AdminDashboard() {
                   ))}
                 </ul>
                 <Link href="/admin/products" className="mt-4 inline-block text-[11px] font-semibold text-[#456553] underline underline-offset-4">{c.manage}</Link>
-              </div>
+              </div>}
             </section>
+            }
 
-            <section className="mt-10">
+            {canOrders && <section className="mt-10">
               <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[#2a0006]/15 pb-4">
                 <div><p className="eyebrow text-[#456553]">{c.recent}</p><h2 className="mt-2 font-display text-2xl text-[#2a0006]">{c.orders}</h2></div>
                 <Link href="/admin/orders" className="text-[11px] font-semibold text-[#456553] underline underline-offset-4">{c.seeOrders}</Link>
@@ -115,7 +125,13 @@ export function AdminDashboard() {
                   </ul>
                 </>
               )}
-            </section>
+            </section>}
+            {!metrics.length && canSettings && <section className="mt-6 border border-[#2a0006]/10 bg-[#f0f5f0] p-7 sm:p-9">
+              <p className="eyebrow text-[#456553]">{ar ? "مساحة الإدارة" : "Your admin workspace"}</p>
+              <h2 className="mt-3 font-display text-2xl text-[#2a0006]">{ar ? "إعدادات الحساب والصلاحيات." : "Accounts and permissions."}</h2>
+              <p className="mt-2 max-w-xl text-[13px] leading-6 text-[#796d68]">{ar ? "تديرين من هنا حسابات فريق الأتيليه والأدوار المسموح لك بإدارتها." : "Manage atelier team accounts and the roles within your permission scope."}</p>
+              <Link href="/admin/settings" className="mt-5 inline-flex min-h-11 items-center bg-[#2a0006] px-5 text-[12px] font-semibold text-[#f6fbf5] hover:bg-[#456553]">{ar ? "فتح الإعدادات" : "Open settings"}</Link>
+            </section>}
           </>
         )}
       </div>

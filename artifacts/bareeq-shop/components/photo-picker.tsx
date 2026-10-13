@@ -6,6 +6,7 @@ import type { AdminPhoto } from "@/lib/types";
 import { useShop } from "@/components/shop-provider";
 import { useScopedResource } from "@/components/use-fresh";
 import { ghostBtn } from "@/components/shop-ui";
+import { hasPermission } from "@/lib/permissions";
 
 type UploadUrl = { id: string; uploadURL: string };
 const MAX_SIZE = 5 * 1024 * 1024;
@@ -46,6 +47,8 @@ export function PhotoPicker({ value, onSelect, onBusyChange }: { value: string; 
   const { language, user, authLoading } = useShop();
   const t = words[language];
   const ar = language === "ar";
+  const canUsePhotos = hasPermission(user, "photos");
+  const permissionsKey = user?.permissions.join(",") ?? "";
   const photos = useScopedResource<AdminPhoto[]>("/admin/photos");
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -53,22 +56,23 @@ export function PhotoPicker({ value, onSelect, onBusyChange }: { value: string; 
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const onBusyChangeRef = useRef(onBusyChange);
-  const identityRef = useRef({ id: user?.id, role: user?.role, active: user?.active, authLoading });
+  const identityRef = useRef({ id: user?.id, role: user?.role, roleId: user?.roleId, permissionsKey, active: user?.active, authLoading });
   onBusyChangeRef.current = onBusyChange;
-  identityRef.current = { id: user?.id, role: user?.role, active: user?.active, authLoading };
+  identityRef.current = { id: user?.id, role: user?.role, roleId: user?.roleId, permissionsKey, active: user?.active, authLoading };
   useEffect(() => {
     setOpen(false);
     setBusy(false);
     setProgress(0);
     setError("");
     onBusyChangeRef.current(false);
-  }, [user?.id, user?.role, user?.active, authLoading]);
+  }, [user?.id, user?.role, user?.roleId, permissionsKey, user?.active, authLoading]);
 
   async function upload(file?: File) {
     if (!file) return;
     const resourceGuard = photos.scopeGuard();
     const scopeId = user?.id;
-    const guard = () => resourceGuard() && identityRef.current.id === scopeId && identityRef.current.role === "admin" && identityRef.current.active && !identityRef.current.authLoading;
+    const roleId = user?.roleId;
+    const guard = () => resourceGuard() && identityRef.current.id === scopeId && identityRef.current.roleId === roleId && identityRef.current.permissionsKey === permissionsKey && hasPermission(user, "photos") && identityRef.current.active && !identityRef.current.authLoading;
     setBusy(true); setProgress(0); setError("");
     onBusyChangeRef.current(true);
     try {
@@ -90,8 +94,8 @@ export function PhotoPicker({ value, onSelect, onBusyChange }: { value: string; 
   return (
     <div className="mt-4">
       <div className="flex flex-wrap items-center gap-3">
-        <button type="button" className={ghostBtn} onClick={() => setOpen((v) => !v)} aria-expanded={open} disabled={busy || user?.role !== "admin"}>{t.choose}</button>
-        <button type="button" className={ghostBtn} onClick={() => fileRef.current?.click()} disabled={busy || user?.role !== "admin"}>{t.upload}</button>
+        <button type="button" className={ghostBtn} onClick={() => setOpen((v) => !v)} aria-expanded={open} disabled={busy || !canUsePhotos}>{t.choose}</button>
+        <button type="button" className={ghostBtn} onClick={() => fileRef.current?.click()} disabled={busy || !canUsePhotos}>{t.upload}</button>
         <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label={t.upload} onChange={(e) => { void upload(e.target.files?.[0]); e.currentTarget.value = ""; }} />
         {busy && <span role="status" className="text-[12px] text-[#456553]">{progress >= 100 ? t.verifying : `${t.busy} · ${progress}%`}</span>}
       </div>
@@ -112,7 +116,7 @@ export function PhotoPicker({ value, onSelect, onBusyChange }: { value: string; 
               : <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {photos.data.filter((photo) => photo.status === "ready").map((photo) => (
                   <li key={photo.id}>
-                    <button type="button" onClick={() => { onSelect(photo.url); setOpen(false); }} aria-pressed={value === photo.url} disabled={user?.role !== "admin"} className={`group w-full border text-start transition-colors disabled:opacity-50 ${value === photo.url ? "border-[#456553] bg-[#f0f5f0]" : "border-[#2a0006]/10 hover:border-[#456553]"}`}>
+                    <button type="button" onClick={() => { onSelect(photo.url); setOpen(false); }} aria-pressed={value === photo.url} disabled={!canUsePhotos} className={`group w-full border text-start transition-colors disabled:opacity-50 ${value === photo.url ? "border-[#456553] bg-[#f0f5f0]" : "border-[#2a0006]/10 hover:border-[#456553]"}`}>
                       <img src={photo.url} alt={photo.name} className="aspect-square w-full object-cover" />
                       <span className="block truncate px-2 py-2 text-[11px] text-[#2a0006]">{photo.name}</span>
                     </button>
