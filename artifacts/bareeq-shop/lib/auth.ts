@@ -13,7 +13,7 @@ const ISSUER = "bareeq-independent-shop";
 function sessionKey() {
   const secret = process.env.JWT_SECRET;
   if (!secret || secret.length < 32) {
-    throw new HttpError(500, "JWT_SECRET must be configured with at least 32 random characters in Replit Secrets.");
+    throw new HttpError(500, "JWT_SECRET must be configured with at least 32 random characters in this deployment's server-side environment variables.");
   }
   return new TextEncoder().encode(secret);
 }
