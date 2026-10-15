@@ -1,18 +1,18 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
-    "api-server": {
-      "root": "artifacts/api-server",
-      "framework": "express"
-    },
     "bareeq-shop": {
       "root": "artifacts/bareeq-shop",
-      "framework": "nextjs"
-    },
-    "mockup-sandbox": {
-      "root": "artifacts/mockup-sandbox",
-      "framework": "vite"
+      "framework": "nextjs",
+      "buildCommand": "pnpm run build"
     }
   },
-  "rewrites": []
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "bareeq-shop"
+      }
+    }
+  ]
 }
