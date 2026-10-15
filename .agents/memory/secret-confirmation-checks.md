@@ -14,3 +14,9 @@ Replit secret availability does not establish configuration in the shop's separa
 **Why:** The Replit shop passed its database/session configuration checks while the Vercel site rejected its JWT configuration and could not load database-backed products. Reopening a Replit secret form would target the wrong runtime.
 
 **How to apply:** For Vercel failures, have the user verify the existing values in Vercel's appropriate environment and redeploy. Never request values in chat, assume that a Replit-side update configures Vercel, or treat local readiness as proof that the Vercel deployment is healthy.
+
+Workspace editing safeguards can reject `.env` file creation even when the proposed file is only an empty template.
+
+**Why:** The environment-file editing guard explicitly blocks these filesystem writes to protect secrets.
+
+**How to apply:** Do not bypass the blocked write using another tool or filename. Explain the limitation and provide blank text instructions for the user to fill privately on their device, or direct them to the target platform's secure environment settings. Never export actual secret values.
