@@ -4,7 +4,7 @@
     "bareeq-shop": {
       "root": "artifacts/bareeq-shop",
       "framework": "nextjs",
-      "buildCommand": "pnpm run build"
+      "buildCommand": "pnpm --filter @workspace/bareeq-shop run build"
     }
   },
   "rewrites": [

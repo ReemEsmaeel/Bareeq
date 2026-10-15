@@ -20,3 +20,9 @@ Keep Next.js production output out of Git, but include it in the published runti
 **Why:** A publishing build compiled successfully, then failed during startup because the image exclusion rules removed the compiled production build. `next start` requires that output even though it is generated.
 
 **How to apply:** Treat Git exclusions and publishing exclusions separately. Confirm the packaged output retains `BUILD_ID`, server and static files, and verify the production start command before suggesting another publish attempt.
+
+For Vercel, keep the customer shop deployment isolated from the workspace's internal design-preview tooling. Vercel's Services model supports the Next.js app as a single service, but services are private unless exposed through top-level rewrites.
+
+**Why:** A recursive workspace build includes development-only tooling that requires Replit runtime variables. Supplying dummy variables on Vercel would conceal the wrong deployment scope rather than fix it.
+
+**How to apply:** Scope the build to the shop package and route public paths to that service. Keep the Vercel project root at the repository root when service roots are repository-relative. Verify portability without Replit-specific port/base-path variables; do not remove the sandbox's preview safeguards.
