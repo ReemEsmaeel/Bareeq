@@ -5,3 +5,4 @@
 - [Custom role scope](custom-role-scope.md) — the user chose configurable custom roles, not Admin/Customer-only access management.
 - [Preview process ownership](preview-process-ownership.md) — failed workflows can coexist with stale listeners; diagnose port ownership before changing code or ports.
 - [Shop analytics policy](shop-analytics-policy.md) — recorded orders are not paid purchases; keep funnel dimensions privacy-minimal.
+- [Git provider authorization](git-provider-authorization.md) — healthy integration status may not mean workspace Git commands can authenticate.
