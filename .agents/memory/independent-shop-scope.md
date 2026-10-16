@@ -14,3 +14,9 @@ Keep the independent shop's existing authentication and database when adding App
 **Why:** The user explicitly required photo uploads without Express, database replacement or changes to the original boutique's data.
 
 **How to apply:** Treat generic storage recipes that suggest a different authentication or database stack as examples, not permission to replace this shop's stack.
+
+Keep the independent shop hosted on Vercel when adapting photo storage, and copy existing photos without deleting their Replit originals.
+
+**Why:** The user explicitly chose to keep Vercel and copy the existing photos to compatible storage after the deployed photo routes failed.
+
+**How to apply:** Preserve existing product image links where possible. Do not treat a successful copy as permission to remove source files or change the original boutique.
