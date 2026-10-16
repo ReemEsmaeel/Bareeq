@@ -43,7 +43,7 @@ export function StripeReturn({ sessionId }: { sessionId: string }) {
           ? (ar ? "تحقّقنا من الدفع لدى Stripe. حُدّث طلبكِ." : "Stripe verified your payment. Your order is updated.")
           : (ar ? "لن نعتبر الدفع ناجحاً قبل أن يؤكده Stripe. يمكنكِ تحديث الحالة أدناه." : "We only mark an order paid after Stripe confirms it. You can check again below."))}
       </p>
-      {order && <p className="mt-4 text-[13px] text-[#2a0006]">{ar ? "إجمالي الطلب: " : "Order total: "}{formatPrice(order.total, language)}</p>}
+      {order && <p className="mt-4 text-[13px] text-[#2a0006]">{ar ? "إجمالي الطلب: " : "Order total: "}{formatPrice(order.total, language, order.currency)}</p>}
       <div className="mt-8 flex flex-wrap gap-3">
         {!paid && <button type="button" onClick={() => void verify()} disabled={busy} className="inline-flex min-h-12 items-center justify-center bg-[#2a0006] px-6 py-3 text-[11px] font-semibold tracking-[.1em] text-[#f6fbf5] hover:bg-[#456553] disabled:opacity-60">{busy ? (ar ? "جارٍ التحقق…" : "Checking…") : (ar ? "تحديث حالة الدفع" : "Refresh payment status")}</button>}
         {order && <Link href={`/orders/${order.id}`} className="inline-flex min-h-12 items-center justify-center border border-[#2a0006]/20 px-6 py-3 text-[11px] font-semibold tracking-[.1em] text-[#2a0006] hover:bg-[#f0f5f0]">{ar ? "عرض الطلب" : "View order"}</Link>}

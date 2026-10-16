@@ -86,7 +86,7 @@ export function AdminOrders() {
                         </div>
                         <div className="text-[12px] text-[#796d68]">
                           <p>{formatDate(o.createdAt, language)}</p>
-                          <p className="mt-1 text-[15px] font-semibold tabular-nums text-[#2a0006]">{c.total}: {formatPrice(o.total, language)}</p>
+                          <p className="mt-1 text-[15px] font-semibold tabular-nums text-[#2a0006]">{c.total}: {formatPrice(o.total, language, o.currency)}</p>
                         </div>
                         {o.paymentProvider === "stripe" ? (
                           <span className="rounded-full bg-[#456553]/10 px-3 py-2 text-[11px] font-semibold text-[#456553]">{c.stripeManaged}</span>
@@ -105,7 +105,7 @@ export function AdminOrders() {
                           {o.items.map((it, i) => (
                             <li key={`${it.product}-${i}`} className="flex justify-between gap-4">
                               <span className="min-w-0 truncate text-[#2a0006]">{ar ? it.nameAr : it.name} <span className="text-[#796d68]">× {it.quantity}</span></span>
-                              <span className="shrink-0 tabular-nums text-[#675d59]">{formatPrice(it.price * it.quantity, language)}</span>
+                              <span className="shrink-0 tabular-nums text-[#675d59]">{formatPrice(it.price * it.quantity, language, o.currency)}</span>
                             </li>
                           ))}
                         </ul>

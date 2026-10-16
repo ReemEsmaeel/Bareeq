@@ -56,11 +56,11 @@ export function OrderDetail({ id, checkoutRetry }: { id: string; checkoutRetry?:
                   <tr key={`${item.product}-${i}`}>
                     <td className="py-5">
                       <span className={`block text-[#2a0006] ${ar ? "font-arabic text-lg" : "font-display text-lg"}`}>{ar ? item.nameAr : item.name}</span>
-                      <span className="text-[11px] tabular-nums text-[#796d68] sm:hidden">{formatPrice(item.price, language)}</span>
+                      <span className="text-[11px] tabular-nums text-[#796d68] sm:hidden">{formatPrice(item.price, language, order.currency)}</span>
                     </td>
                     <td className="py-5 text-center tabular-nums">{item.quantity}</td>
-                    <td className="hidden py-5 text-end tabular-nums sm:table-cell">{formatPrice(item.price, language)}</td>
-                    <td className="py-5 text-end font-semibold tabular-nums text-[#2a0006]">{formatPrice(item.price * item.quantity, language)}</td>
+                    <td className="hidden py-5 text-end tabular-nums sm:table-cell">{formatPrice(item.price, language, order.currency)}</td>
+                    <td className="py-5 text-end font-semibold tabular-nums text-[#2a0006]">{formatPrice(item.price * item.quantity, language, order.currency)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -68,7 +68,7 @@ export function OrderDetail({ id, checkoutRetry }: { id: string; checkoutRetry?:
                 <tr className="border-t border-[#2a0006]/20">
                   <th scope="row" colSpan={2} className="pt-5 text-start font-display text-xl font-normal text-[#2a0006] sm:col-span-3">{c.total}</th>
                   <td className="hidden sm:table-cell" />
-                  <td className="pt-5 text-end text-xl font-semibold tabular-nums text-[#2a0006]">{formatPrice(order.total, language)}</td>
+                  <td className="pt-5 text-end text-xl font-semibold tabular-nums text-[#2a0006]">{formatPrice(order.total, language, order.currency)}</td>
                 </tr>
               </tfoot>
             </table>

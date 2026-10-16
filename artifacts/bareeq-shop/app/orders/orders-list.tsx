@@ -40,7 +40,7 @@ export function OrdersList() {
                     <p className="mt-1 text-[12px] text-[#796d68]">{formatDate(o.createdAt, language)} · {c.pieces(o.items.reduce((s, i) => s + i.quantity, 0))}</p>
                   </div>
                   <div className="sm:justify-self-start"><OrderStatus status={o.status} /></div>
-                  <p className="text-[15px] font-semibold tabular-nums text-[#2a0006]">{formatPrice(o.total, language)}</p>
+                  <p className="text-[15px] font-semibold tabular-nums text-[#2a0006]">{formatPrice(o.total, language, o.currency)}</p>
                   <span className="eyebrow hidden text-[#456553] group-hover:underline sm:inline">{c.view}</span>
                 </Link>
               </li>
