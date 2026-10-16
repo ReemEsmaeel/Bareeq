@@ -3,6 +3,12 @@ name: Next.js artifact hosting
 description: Non-obvious hosting and scaffold constraints encountered when setting up Next.js.
 ---
 
+Keep direct image delivery enabled for the current routed Vercel deployment unless the optimizer route is independently verified.
+
+**Why:** MongoDB photo URLs returned valid images in production while `/_next/image` returned 404 even for bundled assets, leaving homepage `next/image` content missing despite a successful database migration.
+
+**How to apply:** Check both raw photo URLs and browser-generated optimizer URLs when diagnosing photos. Do not assume a working photo API proves homepage image rendering works, or re-enable optimization without testing the published route.
+
 For a dynamic Next.js artifact, use a structured production run command. A command string assigned to the static template's production `serve` field is rejected by artifact schema validation.
 
 **Why:** The static artifact configuration does not represent a Next.js server with API routes.
