@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe, webhookSecret } from "@/lib/stripe";
-import { recordVerifiedPayment } from "@/lib/stripe-payment";
+import { recordVerifiedPayment, recordVerifiedPaymentFailure } from "@/lib/stripe-payment";
 import { HttpError } from "@/lib/http";
 
 export const runtime = "nodejs";
@@ -24,6 +24,8 @@ export async function POST(request: Request) {
   try {
     if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
       await recordVerifiedPayment(event.data.object);
+    } else if (event.type === "checkout.session.async_payment_failed") {
+      await recordVerifiedPaymentFailure(event.data.object);
     }
     // Failed, expired, unrelated and duplicate events never mark an order paid.
     return NextResponse.json({ received: true });

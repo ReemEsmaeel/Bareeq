@@ -12,8 +12,8 @@ import { CATEGORY_AR, formatPrice } from "@/lib/format";
 import type { ShopCart, ShopOrder } from "@/lib/types";
 
 const t = {
-  en: { kicker: "Your bag", title: "Kept aside for you.", qty: "Quantity", remove: "Remove", clear: "Clear bag", confirmClear: "Remove every piece from your bag?", total: "Total", place: "Place order", placing: "Placing order", note: "Placing an order records it with the atelier. No payment is taken in this app.", removed: "Some pieces are no longer available and have been left out of your bag.", emptyT: "Your bag is empty.", emptyX: "When a piece speaks to you, it will wait here.", browse: "Explore the collections", errT: "Your bag could not load.", retry: "Try again", review: "Please review the updated bag, then place your order again.", reloadFailed: "The updated bag could not be loaded. Refresh it successfully before placing your order.", summary: "Summary", items: (n: number) => `${n} ${n === 1 ? "piece" : "pieces"}` },
-  ar: { kicker: "حقيبتكِ", title: "محفوظة لأجلكِ.", qty: "الكمية", remove: "إزالة", clear: "إفراغ الحقيبة", confirmClear: "إزالة كل القطع من حقيبتكِ؟", total: "المجموع", place: "تأكيد الطلب", placing: "جارٍ تسجيل الطلب", note: "تأكيد الطلب يسجّله لدى الأتيليه. لا يتم أخذ أي دفعة في هذا التطبيق.", removed: "بعض القطع لم تعد متاحة وتم استبعادها من حقيبتكِ.", emptyT: "حقيبتكِ فارغة.", emptyX: "حين تلامسكِ قطعة، ستنتظركِ هنا.", browse: "اكتشفي المجموعات", errT: "تعذّر تحميل حقيبتكِ.", retry: "حاولي مجدداً", review: "يرجى مراجعة الحقيبة المحدّثة ثم تأكيد الطلب مجدداً.", reloadFailed: "تعذّر تحميل الحقيبة المحدّثة. يرجى تحديثها بنجاح قبل تأكيد الطلب.", summary: "الملخص", items: (n: number) => `${n} قطعة` },
+  en: { kicker: "Your bag", title: "Kept aside for you.", qty: "Quantity", remove: "Remove", clear: "Clear bag", confirmClear: "Remove every piece from your bag?", total: "Total", place: "Continue to secure checkout", placing: "Preparing secure checkout", note: "Your order total is confirmed by the shop. Stripe test checkout is secure; no real charge will be made.", removed: "Some pieces are no longer available and have been left out of your bag.", emptyT: "Your bag is empty.", emptyX: "When a piece speaks to you, it will wait here.", browse: "Explore the collections", errT: "Your bag could not load.", retry: "Try again", review: "Please review the updated bag, then place your order again.", reloadFailed: "The updated bag could not be loaded. Refresh it successfully before placing your order.", summary: "Summary", items: (n: number) => `${n} ${n === 1 ? "piece" : "pieces"}` },
+  ar: { kicker: "حقيبتكِ", title: "محفوظة لأجلكِ.", qty: "الكمية", remove: "إزالة", clear: "إفراغ الحقيبة", confirmClear: "إزالة كل القطع من حقيبتكِ؟", total: "المجموع", place: "المتابعة إلى الدفع الآمن", placing: "جارٍ تجهيز الدفع الآمن", note: "يؤكد المتجر إجمالي طلبكِ. الدفع التجريبي آمن عبر Stripe ولن يتم خصم أي مبلغ حقيقي.", removed: "بعض القطع لم تعد متاحة وتم استبعادها من حقيبتكِ.", emptyT: "حقيبتكِ فارغة.", emptyX: "حين تلامسكِ قطعة، ستنتظركِ هنا.", browse: "اكتشفي المجموعات", errT: "تعذّر تحميل حقيبتكِ.", retry: "حاولي مجدداً", review: "يرجى مراجعة الحقيبة المحدّثة ثم تأكيد الطلب مجدداً.", reloadFailed: "تعذّر تحميل الحقيبة المحدّثة. يرجى تحديثها بنجاح قبل تأكيد الطلب.", summary: "الملخص", items: (n: number) => `${n} قطعة` },
 };
 
 export function CartView() {
@@ -55,15 +55,9 @@ export function CartView() {
     const isCurrent = scopeGuard();
     setPlacing(true);
     setMessage("");
+    let order: ShopOrder;
     try {
-      const order = await api<ShopOrder>("/orders", { method: "POST", body: { quote: cart.quote } });
-      trackEvent("order_recorded", {
-        quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-        value_sar: order.total,
-      });
-      if (!isCurrent()) return;
-      router.push(`/orders/${order.id}`);
-      router.refresh();
+      order = await api<ShopOrder>("/orders", { method: "POST", body: { quote: cart.quote } });
     } catch (err) {
       if (!isCurrent()) return;
       const text = err instanceof ApiError ? err.message : "Something went wrong.";
@@ -81,6 +75,28 @@ export function CartView() {
         setMessage(text);
       }
       setPlacing(false);
+      return;
+    }
+    if (!isCurrent()) return;
+    trackEvent("order_recorded", {
+      quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      value_sar: order.total,
+    });
+    try {
+      const checkout = await api<{ url: string; orderId: string }>("/checkout", {
+        method: "POST", body: { orderId: order.id },
+      });
+      if (!isCurrent()) return;
+      const stripeUrl = new URL(checkout.url);
+      if (stripeUrl.protocol !== "https:" || stripeUrl.hostname !== "checkout.stripe.com" || checkout.orderId !== order.id) {
+        throw new Error("Stripe returned an unexpected checkout address.");
+      }
+      window.location.assign(stripeUrl.toString());
+    } catch {
+      if (isCurrent()) {
+        router.push(`/orders/${order.id}?checkout=retry`);
+        router.refresh();
+      }
     }
   }
 

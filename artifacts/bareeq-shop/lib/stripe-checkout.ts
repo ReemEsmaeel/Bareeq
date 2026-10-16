@@ -72,7 +72,7 @@ export async function createOrderCheckout(orderId: string, userId: string, origi
     const prices = await Promise.all(order.items.map((item: any) => stripePrice(stripe, item)));
     const attempt = order.checkoutAttempt ?? 0;
     const session = await stripe.checkout.sessions.create({
-      mode: "payment", payment_method_types: ["card"], locale: "auto",
+      mode: "payment", locale: "auto",
       client_reference_id: userId,
       metadata: { shop: STRIPE_SHOP, orderId, attempt: String(attempt) },
       payment_intent_data: { metadata: { shop: STRIPE_SHOP, orderId } },

@@ -10,6 +10,16 @@ Keep these values in Replit Secrets, never in source files:
 
 - `MONGODB_URI`: the MongoDB Atlas database-user connection string.
 - `JWT_SECRET`: at least 32 random characters (64 recommended) for signed sessions.
+- `STRIPE_SECRET_KEY`: your Stripe sandbox/test server key (`sk_test_...` or a
+  test restricted key). Live keys are deliberately rejected.
+- `STRIPE_WEBHOOK_SECRET`: the signing secret for this shop's Stripe test-mode
+  webhook endpoint. Do not use a live-mode webhook secret.
+
+Set `SHOP_PUBLIC_URL` to the shop's public HTTPS origin (without a path or
+trailing slash). For the existing Vercel site, use `https://bareeq-wkla.vercel.app`.
+Vercel environment variables are separate from Replit Secrets: add the same test
+Stripe keys and `SHOP_PUBLIC_URL` to Vercel's Production environment, then redeploy.
+Never commit or paste Stripe keys into source files.
 
 Photo bytes and metadata live in the shop's independent MongoDB database.
 No additional storage provider, token, or subscription is required at runtime.
@@ -83,7 +93,8 @@ another administrator through first-admin setup is blocked.
 There is no public promotion or bootstrap endpoint. Public signup always creates
 a customer and rejects role fields. You may remove `ADMIN_PASSWORD` from Secrets
 after successful setup. Core shop runtime needs `MONGODB_URI` and `JWT_SECRET`;
-photo features use the same MongoDB connection.
+photo and order data use the same MongoDB connection. Stripe checkout additionally
+requires its test secret key, webhook signing secret and public shop URL.
 
 ## Features and manual checks
 
@@ -137,11 +148,24 @@ lock serializes access changes, re-checks the actor, and preserves at least one
 active full administrator even during concurrent requests. Public signup still
 creates customers only; administrator creation is not public.
 
-Order placement records a pending order in MongoDB and atomically clears the bag.
-All prices are computed server-side. A changed bag or price must be reviewed
-before placement. Concurrent submissions cannot create duplicate orders from
-the same bag. **No payment or charge is taken, and no Stripe integration exists.**
-The paid status is a manual record, not a charge made by this app.
+Checkout records a pending order in MongoDB and atomically clears the bag.
+All prices are computed server-side from product records, and Stripe Checkout
+uses SAR prices and the saved order snapshot, not amounts supplied by the browser.
+Test-mode checkout is hosted by Stripe; no card details enter this shop. A customer
+can return to the saved order after cancelling or an expired checkout. An order is
+marked paid only after verifying the Stripe session or its signed webhook; duplicate
+events are safe, and admins cannot manually mark Stripe orders paid. Earlier manual
+orders can still be managed normally.
+
+**Only sandbox/test payments are enabled.** Before checkout can start, configure
+the test-mode webhook endpoint at
+`https://bareeq-wkla.vercel.app/api/shop/stripe/webhook` with the events
+`checkout.session.completed`, `checkout.session.async_payment_succeeded`, and
+`checkout.session.async_payment_failed`; save that endpoint's `whsec_...` signing
+secret to `STRIPE_WEBHOOK_SECRET`. Configure `STRIPE_SECRET_KEY`,
+`STRIPE_WEBHOOK_SECRET`, and `SHOP_PUBLIC_URL` in Vercel Production as well as
+Replit Secrets, then redeploy the code. Do not switch to live keys until a test
+payment and the matching paid order have both been confirmed.
 
 Switch English/Arabic and check the customer/admin pages at phone and desktop
 widths. Unauthenticated protected-page visits go to sign-in. Customers visiting

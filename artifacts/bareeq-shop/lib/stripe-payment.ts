@@ -33,3 +33,30 @@ export async function recordVerifiedPayment(session: Stripe.Checkout.Session) {
   }
   return { orderId: id, status: order.status as "pending" | "paid", sessionState: session.status };
 }
+
+/** Release an unsettled asynchronous Checkout session so the owner can retry. */
+export async function recordVerifiedPaymentFailure(session: Stripe.Checkout.Session) {
+  if (session.metadata?.shop !== STRIPE_SHOP) return null;
+  const id = session.metadata?.orderId;
+  if (!id || !/^[a-f\d]{24}$/i.test(id) || session.livemode ||
+      session.mode !== "payment" || session.payment_status === "paid") {
+    throw new HttpError(400, "The failed payment does not match an unpaid shop order.");
+  }
+  await connectDB();
+  const order = await Order.findOne({
+    _id: id, user: session.client_reference_id, paymentProvider: "stripe",
+    stripeSessionId: session.id, status: "pending",
+  });
+  if (!order || session.currency !== "sar" ||
+      session.amount_total !== Math.round(order.total * 100)) {
+    throw new HttpError(503, "The order is not ready for payment confirmation. Please retry.");
+  }
+  await Order.updateOne({
+    _id: id, stripeSessionId: session.id, status: "pending",
+    paymentProvider: "stripe",
+  }, {
+    $inc: { checkoutAttempt: 1 },
+    $unset: { stripeSessionId: "" },
+  });
+  return { orderId: id, status: "pending" as const, sessionState: session.status };
+}

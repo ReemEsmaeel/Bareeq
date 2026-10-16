@@ -11,8 +11,8 @@ import type { ShopOrder } from "@/lib/types";
 
 type Status = ShopOrder["status"];
 const t = {
-  en: { kicker: "Orders", title: "Recorded orders.", note: "Statuses are recorded manually by the atelier. No payment is taken in this app; marking an order paid only records what happened elsewhere.", search: "Search by customer, email or order", all: "All", pending: "Pending", paid: "Paid", filter: "Filter by status", unknown: "Customer account removed", items: "Pieces", status: "Status", save: "Save status", saving: "Saving", saved: "Status saved.", emptyT: "No orders yet.", emptyX: "Orders customers place will appear here.", noMatch: "No orders match these filters.", total: "Total", details: "Show pieces", hide: "Hide pieces" },
-  ar: { kicker: "الطلبات", title: "الطلبات المسجّلة.", note: "يسجّل الأتيليه الحالات يدوياً. لا يتم أخذ أي دفعة في هذا التطبيق؛ وتعيين الطلب كمدفوع يسجّل فقط ما تم خارجه.", search: "ابحثي بالعميل أو البريد أو رقم الطلب", all: "الكل", pending: "قيد الانتظار", paid: "مدفوع", filter: "تصفية حسب الحالة", unknown: "حساب العميل غير موجود", items: "القطع", status: "الحالة", save: "حفظ الحالة", saving: "جارٍ الحفظ", saved: "تم حفظ الحالة.", emptyT: "لا طلبات بعد.", emptyX: "ستظهر هنا طلبات العملاء.", noMatch: "لا طلبات تطابق هذه الفلاتر.", total: "المجموع", details: "عرض القطع", hide: "إخفاء القطع" },
+  en: { kicker: "Orders", title: "Shop orders.", note: "Stripe order status is updated only after server-verified payment. Earlier manual orders can still be managed by the atelier.", search: "Search by customer, email or order", all: "All", pending: "Pending", paid: "Paid", filter: "Filter by status", unknown: "Customer account removed", items: "Pieces", status: "Status", save: "Save status", saving: "Saving", saved: "Status saved.", stripeManaged: "Verified by Stripe", emptyT: "No orders yet.", emptyX: "Orders customers place will appear here.", noMatch: "No orders match these filters.", total: "Total", details: "Show pieces", hide: "Hide pieces" },
+  ar: { kicker: "الطلبات", title: "طلبات المتجر.", note: "لا يتم تحديث حالة طلب Stripe إلا بعد التحقق من الدفع عبر الخادم. يمكن للأتيليه الاستمرار في إدارة الطلبات السابقة يدوياً.", search: "ابحثي بالعميل أو البريد أو رقم الطلب", all: "الكل", pending: "قيد الانتظار", paid: "مدفوع", filter: "تصفية حسب الحالة", unknown: "حساب العميل غير موجود", items: "القطع", status: "الحالة", save: "حفظ الحالة", saving: "جارٍ الحفظ", saved: "تم حفظ الحالة.", stripeManaged: "تم التحقق عبر Stripe", emptyT: "لا طلبات بعد.", emptyX: "ستظهر هنا طلبات العملاء.", noMatch: "لا طلبات تطابق هذه الفلاتر.", total: "المجموع", details: "عرض القطع", hide: "إخفاء القطع" },
 };
 
 export function AdminOrders() {
@@ -88,14 +88,16 @@ export function AdminOrders() {
                           <p>{formatDate(o.createdAt, language)}</p>
                           <p className="mt-1 text-[15px] font-semibold tabular-nums text-[#2a0006]">{c.total}: {formatPrice(o.total, language)}</p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        {o.paymentProvider === "stripe" ? (
+                          <span className="rounded-full bg-[#456553]/10 px-3 py-2 text-[11px] font-semibold text-[#456553]">{c.stripeManaged}</span>
+                        ) : <div className="flex items-center gap-2">
                           <label htmlFor={`st-${o.id}`} className="sr-only">{c.status}</label>
                           <select id={`st-${o.id}`} value={draft} disabled={busy} onChange={(e) => setDrafts((d) => ({ ...d, [o.id]: e.target.value as Status }))} className={`${adminInput} w-auto`}>
                             <option value="pending">{c.pending}</option>
                             <option value="paid">{c.paid}</option>
                           </select>
                           <button onClick={() => void saveStatus(o)} disabled={busy || draft === o.status} className="whitespace-nowrap bg-[#2a0006] px-4 py-2.5 text-[11px] font-semibold tracking-[.08em] text-[#f6fbf5] hover:bg-[#456553] disabled:opacity-35">{busy ? c.saving : c.save}</button>
-                        </div>
+                        </div>}
                       </div>
                       <button onClick={() => setOpenId(openId === o.id ? null : o.id)} aria-expanded={openId === o.id} className="eyebrow mt-3 !text-[9px] text-[#456553] hover:underline">{openId === o.id ? c.hide : `${c.details} (${o.items.reduce((s, i) => s + i.quantity, 0)})`}</button>
                       {openId === o.id && (

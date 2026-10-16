@@ -6,13 +6,14 @@ import { useShop } from "@/components/shop-provider";
 import { useScopedResource } from "@/components/use-fresh";
 import { formatDate, formatPrice } from "@/lib/format";
 import type { ShopOrder } from "@/lib/types";
+import { PayOrderButton } from "@/components/pay-order-button";
 
 const t = {
-  en: { back: "My orders", kicker: "Order", placed: "Placed", piece: "Piece", qty: "Qty", price: "Price", total: "Total", note: "This order was recorded without taking payment. Its status is managed by the atelier and does not mean this app charged you.", missT: "Order not found.", missX: "It may not exist or may belong to another account.", errT: "This order could not load.", retry: "Try again" },
-  ar: { back: "طلباتي", kicker: "طلب", placed: "تاريخ الطلب", piece: "القطعة", qty: "الكمية", price: "السعر", total: "المجموع", note: "سُجّل هذا الطلب دون أخذ أي دفعة. يدير الأتيليه حالته، ولا تعني أن هذا التطبيق أخذ منكِ أي مبلغ.", missT: "الطلب غير موجود.", missX: "ربما لا يوجد أو يخص حساباً آخر.", errT: "تعذّر تحميل هذا الطلب.", retry: "حاولي مجدداً" },
+  en: { back: "My orders", kicker: "Order", placed: "Placed", piece: "Piece", qty: "Qty", price: "Price", total: "Total", note: "This order was recorded with the amount shown below. Stripe verifies the payment before its status changes to paid.", manualNote: "This earlier order was recorded without payment; its status is managed manually by the atelier.", failed: "The order is saved, but checkout could not start. You have not been charged. Check the payment settings and try again.", missT: "Order not found.", missX: "It may not exist or may belong to another account.", errT: "This order could not load.", retry: "Try again" },
+  ar: { back: "طلباتي", kicker: "طلب", placed: "تاريخ الطلب", piece: "القطعة", qty: "الكمية", price: "السعر", total: "المجموع", note: "سُجّل هذا الطلب بالمبلغ الموضح أدناه. يتحقق Stripe من الدفع قبل تحديث الحالة إلى مدفوع.", manualNote: "سُجّل هذا الطلب السابق دون دفع؛ ويدير الأتيليه حالته يدوياً.", failed: "تم حفظ الطلب، لكن تعذّر بدء الدفع. لم يتم خصم أي مبلغ. تحققي من إعدادات الدفع ثم حاولي مجدداً.", missT: "الطلب غير موجود.", missX: "ربما لا يوجد أو يخص حساباً آخر.", errT: "تعذّر تحميل هذا الطلب.", retry: "حاولي مجدداً" },
 };
 
-export function OrderDetail({ id }: { id: string }) {
+export function OrderDetail({ id, checkoutRetry }: { id: string; checkoutRetry?: boolean }) {
   const { language } = useShop();
   const c = t[language];
   const ar = language === "ar";
@@ -38,7 +39,9 @@ export function OrderDetail({ id }: { id: string }) {
               </div>
               <OrderStatus status={order.status} />
             </div>
-            <p className="mt-8 border-s-2 border-[#456553] bg-[#456553]/10 px-4 py-3 text-[12px] leading-[1.7] text-[#456553]">{c.note}</p>
+            <p className="mt-8 border-s-2 border-[#456553] bg-[#456553]/10 px-4 py-3 text-[12px] leading-[1.7] text-[#456553]">{order.paymentProvider === "stripe" ? c.note : c.manualNote}</p>
+            {checkoutRetry && order.paymentProvider === "stripe" && order.status !== "paid" && <p role="alert" className="mt-4 border-s-2 border-[#4a0e17] bg-[#4a0e17]/5 px-4 py-3 text-[12px] leading-[1.7] text-[#4a0e17]">{c.failed}</p>}
+            <PayOrderButton order={order} language={language} />
             <table className="mt-10 w-full text-start text-[13px]">
               <thead>
                 <tr className="eyebrow border-b border-[#2a0006]/15 text-[#796d68]">
