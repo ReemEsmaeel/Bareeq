@@ -42,6 +42,8 @@ export function publicOrder(order: any): ShopOrder {
     })),
     total: order.total,
     status: order.status,
+    paymentProvider: order.paymentProvider ?? "manual",
+    paidAt: order.paidAt ? new Date(order.paidAt).toISOString() : null,
     createdAt: new Date(order.createdAt).toISOString(),
   };
 }

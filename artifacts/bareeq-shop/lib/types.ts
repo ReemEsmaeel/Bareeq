@@ -47,6 +47,8 @@ export type ShopOrder = {
   }[];
   total: number;
   status: "pending" | "paid";
+  paymentProvider?: "manual" | "stripe";
+  paidAt?: string | null;
   createdAt: string;
   customer?: ShopUser | null;
 };
