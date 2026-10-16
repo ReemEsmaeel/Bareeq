@@ -11,13 +11,20 @@ Keep these values in Replit Secrets, never in source files:
 - `MONGODB_URI`: the MongoDB Atlas database-user connection string.
 - `JWT_SECRET`: at least 32 random characters (64 recommended) for signed sessions.
 
-Photo storage uses Replit App Storage and its managed configuration
-(`DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PRIVATE_OBJECT_DIR`,
-`PUBLIC_OBJECT_SEARCH_PATHS`). These values must remain server-only in Secrets.
-Uploaded bytes live in App Storage, not MongoDB, Git, or local application files.
-Metadata remains in the shop's independent MongoDB database. The shop retains
-its own JWT authentication and Next.js route handlers; no Replit Auth, PostgreSQL,
-or separate Express upload server is added.
+Photo bytes and metadata live in the shop's independent MongoDB database.
+No additional storage provider, token, or subscription is required at runtime.
+New uploads are limited to 4 MiB (below Vercel's request limit), decoded, stripped
+of metadata, resized to at most 2400 pixels and compressed to WebP. Photos count
+toward the Atlas storage allowance. The shop retains its own JWT authentication
+and Next.js route handlers; no separate upload server is added.
+
+The one-time `scripts/migrate-photos-to-mongo.ts` script copies the independent
+shop's legacy Replit photos without deleting originals or changing product URLs.
+Run it in Replit with `pnpm --filter @workspace/bareeq-shop exec tsx
+scripts/migrate-photos-to-mongo.ts` for a dry-run; append `--apply` to copy.
+It verifies copied bytes by SHA-256, refuses destination conflicts, and requires
+the old `PRIVATE_OBJECT_DIR` only during migration. Deploy the updated shop code
+to Vercel after copying; its old code will still try to use Replit storage.
 
 The connection explicitly selects `bareeq_independent_shop`, regardless of the
 database named in the URI, to avoid using the original boutique's database.
@@ -76,7 +83,7 @@ another administrator through first-admin setup is blocked.
 There is no public promotion or bootstrap endpoint. Public signup always creates
 a customer and rejects role fields. You may remove `ADMIN_PASSWORD` from Secrets
 after successful setup. Core shop runtime needs `MONGODB_URI` and `JWT_SECRET`;
-photo features additionally need the managed App Storage configuration above.
+photo features use the same MongoDB connection.
 
 ## Features and manual checks
 
@@ -100,7 +107,7 @@ photo features additionally need the managed App Storage configuration above.
 - `/admin/products`: create/edit/delete bilingual products. Deletion removes a
   piece from browsing and bags, while previous order snapshots remain.
 - `/admin/photos`: upload, search, view product usage, and permanently delete
-  public product photographs. JPEG, PNG, and WebP are supported up to 5 MiB.
+  public product photographs. JPEG, PNG, and WebP are supported up to 4 MiB.
   Product forms can upload/select a library photo or keep an HTTPS/local image.
   Removing a form's photo resets the illustrative default after saving; deleting
   a library photo permanently removes its stored file and resets all products
@@ -146,14 +153,17 @@ never expose hashes. Authentication attempts are rate-limited using expiring
 hashed identifiers. Mutating routes enforce same-origin requests.
 
 Photo upload/delete/list operations require a current database administrator role.
-Direct signed uploads go to staging with a five-minute URL. Completion checks
+Uploads go to private MongoDB staging through an authenticated, same-origin route
+using an owner-bound ten-minute ticket. Completion checks
 the actual file bytes, type and size before publishing the verified bytes to a
 different path, so a remaining upload URL cannot overwrite a public photo.
 Only completed photos are publicly served, with explicit MIME types and
 `nosniff`. Product attachment and deletion serialize in MongoDB transactions.
 If physical deletion fails, a hidden `deleting` record remains for a visible
 retry rather than falsely reporting success. Never upload sensitive files.
-Abandoned staging uploads are not automatically cleaned up yet.
+Abandoned staging blobs expire automatically after 15 minutes through a MongoDB
+TTL index and cannot be read after expiry even before the cleanup runs. Published
+blobs have no expiry. Binary fields are excluded from metadata/list queries.
 
 ## Server routes
 

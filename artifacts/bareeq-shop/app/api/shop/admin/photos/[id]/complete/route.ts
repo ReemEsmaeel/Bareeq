@@ -5,6 +5,7 @@ import { checkOrigin, handle, HttpError, validId } from "@/lib/http";
 import { adminPhoto } from "@/lib/photos";
 import { imageType, MAX_LIBRARY_PHOTO_BYTES as MAX_PHOTO_BYTES, photoFile, photoStorageClient, validatePhoto } from "@/lib/photo-storage";
 import { Photo } from "@/models/Photo";
+import mongoose from "mongoose";
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   return handle(async () => {
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       const [metadata] = await staged.getMetadata();
       const size = Number(metadata.size);
       if (!Number.isSafeInteger(size) || size < 1 || size > MAX_PHOTO_BYTES || size !== photo.size) {
-        throw new HttpError(400, "The uploaded file size is invalid. Choose an image up to 5 MB.");
+        throw new HttpError(400, "The uploaded file size is invalid. Choose an image up to 4 MB.");
       }
       // Read the verified generation only; publish these exact bytes to a path
       // the client's signed PUT URL cannot overwrite.
@@ -39,13 +40,22 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         throw new HttpError(400, "This file is not a valid JPEG, PNG or WebP photo.");
       }
       // Library uploads must pass full decoding too, not only signature checks.
-      await validatePhoto(bytes, actualType);
-      await photoFile(id).save(bytes, {
-        resumable: false,
-        metadata: { contentType: actualType, cacheControl: "no-store" },
-      });
+      const safePhoto = await validatePhoto(bytes, actualType);
+      const session = await mongoose.startSession();
+      try {
+        await session.withTransaction(async () => {
+          await photoFile(id).save(safePhoto, {
+            session,
+            metadata: { contentType: "image/webp", cacheControl: "no-store", metadata: { validated: "true" } },
+          });
+          const result = await Photo.updateOne({ _id: id, status: "processing" },
+            { $set: { status: "ready", contentType: "image/webp", size: safePhoto.length } }, { session });
+          if (!result.matchedCount) throw new HttpError(409, "This upload is no longer available.");
+        });
+      } finally { await session.endSession(); }
       photo.status = "ready";
-      await photo.save();
+      photo.contentType = "image/webp";
+      photo.size = safePhoto.length;
       // Failure to remove staging must not pretend publication failed.
       await snapshot.delete({ ignoreNotFound: true }).catch(() => {
         console.warn("[shop-photo] Staged upload cleanup deferred.");

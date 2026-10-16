@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import sharp from "sharp";
 import { connectDB } from "../lib/db";
 import { User } from "../models/User";
 import { Product } from "../models/Product";
@@ -41,8 +42,8 @@ async function upload(bytes: Buffer, cookie: string, contentType = "image/jpeg")
   assert.equal(signed.status, 201, "Signed upload preparation must succeed.");
   const { id, uploadURL } = await signed.json();
   photoIds.push(id);
-  const uploaded = await fetch(uploadURL, {
-    method: "PUT", headers: { "Content-Type": contentType }, body: new Uint8Array(bytes),
+  const uploaded = await fetch(new URL(uploadURL, base), {
+    method: "PUT", headers: { "Content-Type": contentType, Origin: base, Cookie: cookie }, body: new Uint8Array(bytes),
   });
   assert.equal(uploaded.status, 200, "Direct storage upload must succeed.");
   return { id, uploadURL };
@@ -85,16 +86,17 @@ try {
   assert.equal("uploadURL" in photo, false);
   const served = await request(`/media/${uploaded.id}`);
   assert.equal(served.status, 200);
-  assert.equal(served.headers.get("content-type"), "image/jpeg");
+  assert.equal(served.headers.get("content-type"), "image/webp");
   assert.equal(served.headers.get("x-content-type-options"), "nosniff");
-  assert.deepEqual(Buffer.from(await served.arrayBuffer()), bytes);
+  const published = Buffer.from(await served.arrayBuffer());
+  assert.equal((await sharp(published).metadata()).format, "webp");
 
   // A still-valid signed upload cannot rewrite the published object.
-  await fetch(uploaded.uploadURL, {
-    method: "PUT", headers: { "Content-Type": "image/jpeg" },
+  await fetch(new URL(uploaded.uploadURL, base), {
+    method: "PUT", headers: { "Content-Type": "image/jpeg", Origin: base, Cookie: admin.cookie },
     body: new Uint8Array(Buffer.from("not a photo")),
   });
-  assert.deepEqual(Buffer.from(await (await request(`/media/${uploaded.id}`)).arrayBuffer()), bytes);
+  assert.deepEqual(Buffer.from(await (await request(`/media/${uploaded.id}`)).arrayBuffer()), published);
   const created = await request("/admin/products", "POST", { ...input, image: photo.url }, admin.cookie);
   assert.equal(created.status, 201);
   productId = (await created.json()).id;

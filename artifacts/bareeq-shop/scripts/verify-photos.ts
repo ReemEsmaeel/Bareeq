@@ -6,7 +6,7 @@ import { connectDB } from "../lib/db";
 import { User } from "../models/User";
 import { Product } from "../models/Product";
 import { Role } from "../models/Role";
-import { photoStorageClient, validatePhoto } from "../lib/photo-storage";
+import { photoStorageClient, validatePhoto, verifyPhotoUpload } from "../lib/photo-storage";
 
 const base = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost";
 const emails = [0, 1, 2].map(() => `photo-verification-${randomUUID()}@example.invalid`);
@@ -35,10 +35,12 @@ async function stage(bytes: Buffer, contentType: string, cookie: string, declare
   const response = await request("/admin/photos/request", { size: declaredSize, contentType }, cookie);
   assert.equal(response.status, 200, `Upload request failed: ${await response.clone().text()}`);
   const upload = await response.json();
-  const path = new URL(upload.uploadURL).pathname.slice(1).split("/");
-  objects.push({ bucket: path[0]!, name: decodeURIComponent(path.slice(1).join("/")) });
-  const put = await fetch(upload.uploadURL, { method: "PUT", headers: { "Content-Type": contentType }, body: new Uint8Array(bytes) });
-  assert.equal(put.status, 200, "App Storage PUT failed.");
+  const url = new URL(upload.uploadURL, base);
+  const owner = await User.findOne({ email: emails[0] });
+  const { file } = await verifyPhotoUpload(url.searchParams.get("token")!, String(owner!._id));
+  objects.push({ bucket: file.bucket.name, name: file.name });
+  const put = await fetch(url, { method: "PUT", headers: { "Content-Type": contentType, Origin: base, Cookie: cookie }, body: new Uint8Array(bytes) });
+  assert.equal(put.status, declaredSize === bytes.length ? 200 : 400, "MongoDB staging upload size check failed.");
   return upload;
 }
 
@@ -93,15 +95,16 @@ try {
     assert.equal(finalized.status, 201, `Finalize failed: ${await finalized.clone().text()}`);
     image = (await finalized.json()).image;
     assert.match(image, /^\/api\/shop\/images\/[a-f0-9-]+$/);
-    const dir = process.env.PRIVATE_OBJECT_DIR!.replace(/^\/+|\/+$/g, "").split("/");
-    objects.push({ bucket: dir[0]!, name: [...dir.slice(1), "independent-shop", "photos", image.split("/").at(-1)!].join("/") });
+    objects.push({ bucket: "shop", name: `independent-shop/photos/${image.split("/").at(-1)!}` });
     const photo = await fetch(`${base}${image}`);
     assert.equal(photo.status, 200);
     assert.equal(photo.headers.get("content-type"), "image/webp");
     assert.equal(photo.headers.get("x-content-type-options"), "nosniff");
     assert.equal((await sharp(Buffer.from(await photo.arrayBuffer())).metadata()).width, 64);
     // Changing the still-valid upload target must not alter the final photo.
-    assert.equal((await fetch(pending.uploadURL, { method: "PUT", body: "not a photo" })).status, 200);
+    assert.equal((await fetch(new URL(pending.uploadURL, base), {
+      method: "PUT", headers: { Origin: base, Cookie: admin.cookie, "Content-Type": `image/${format}` }, body: "not a photo",
+    })).status, 400);
     assert.equal((await fetch(`${base}${image}`)).status, 200);
   }
   const input = { name: "Temporary photo verification piece", nameAr: "قطعة مؤقتة", description: "Temporary verification.", descriptionAr: "تحقق مؤقت.", price: 12.34, image, category: "Lujain" };

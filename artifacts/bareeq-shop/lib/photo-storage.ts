@@ -1,43 +1,24 @@
 import { randomUUID, createHash } from "node:crypto";
 import { Readable } from "node:stream";
-import { Storage } from "@google-cloud/storage";
 import { SignJWT, jwtVerify } from "jose";
 import sharp from "sharp";
 import { z } from "zod";
 import { HttpError } from "./http";
+import { MongoPhotoFile, mongoPhotoStorage } from "./mongo-photo-files";
 
-export const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
+export const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
 // Preserve the library's existing upload contract independently of direct uploads.
-export const MAX_LIBRARY_PHOTO_BYTES = 5 * 1024 * 1024;
+export const MAX_LIBRARY_PHOTO_BYTES = MAX_PHOTO_BYTES;
 export const DEFAULT_PRODUCT_IMAGE = "/bareeq-editorial.jpg";
 const MAX_PIXELS = 24_000_000;
 const PREFIX = "/api/shop/images/";
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/;
-const SIDECAR = "http://127.0.0.1:1106";
-
-// Replit App Storage's standard sidecar authentication.
-const storage = new Storage({
-  credentials: {
-    audience: "replit",
-    subject_token_type: "access_token",
-    token_url: `${SIDECAR}/token`,
-    type: "external_account",
-    credential_source: {
-      url: `${SIDECAR}/credential`,
-      format: { type: "json", subject_token_field_name: "access_token" },
-    },
-    universe_domain: "googleapis.com",
-  },
-  projectId: "",
-});
+const storage = mongoPhotoStorage;
 export { storage as photoStorageClient };
 
 function libraryLocation(id: string, staging: boolean) {
-  const directory = process.env.PRIVATE_OBJECT_DIR?.replace(/^\/|\/$/g, "");
-  if (!directory) throw new HttpError(503, "Photo storage is not configured.");
-  const [bucket, ...parts] = directory.split("/");
-  if (!bucket || !parts.length) throw new HttpError(503, "Photo storage is not configured.");
-  return { bucket, key: `${parts.join("/")}/bareeq-independent-shop/${staging ? "staging" : "photos"}/${id}` };
+  if (!/^[a-f\d]{24}$/i.test(id)) throw new HttpError(400, "Invalid photo identifier.");
+  return { bucket: "shop", key: `bareeq-independent-shop/${staging ? "staging" : "photos"}/${id}` };
 }
 
 export function photoFile(id: string, staging = false) {
@@ -49,21 +30,34 @@ export function photoUrl(id: string) {
   return `/api/shop/media/${id}`;
 }
 
-export async function photoUploadUrl(id: string) {
-  const { bucket, key } = libraryLocation(id, true);
-  const response = await fetch(`${SIDECAR}/object-storage/signed-object-url`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      bucket_name: bucket, object_name: key, method: "PUT",
-      expires_at: new Date(Date.now() + 5 * 60000).toISOString(),
-    }),
-    signal: AbortSignal.timeout(30000),
-  });
-  if (!response.ok) throw new HttpError(503, "Photo storage is unavailable. Try uploading again later.");
-  const result = await response.json();
-  if (typeof result.signed_url !== "string") throw new HttpError(503, "Photo storage could not prepare this upload.");
-  return result.signed_url as string;
+export async function photoUploadUrl(id: string, owner: string, size: number, contentType: string) {
+  const { key } = libraryLocation(id, true);
+  return mongoUploadUrl(owner, key, size, contentType);
+}
+
+async function mongoUploadUrl(owner: string, key: string, size: number, contentType: string) {
+  const token = await new SignJWT({ key, size, contentType })
+    .setProtectedHeader({ alg: "HS256" }).setSubject(owner)
+    .setIssuer("independent-shop-photo").setAudience("photo-upload")
+    .setIssuedAt().setExpirationTime("10m").sign(ticketKey());
+  return `/api/shop/admin/photos/blob?token=${encodeURIComponent(token)}`;
+}
+
+export async function verifyPhotoUpload(token: string, owner: string) {
+  let payload;
+  try {
+    payload = (await jwtVerify(token, ticketKey(), {
+      algorithms: ["HS256"], issuer: "independent-shop-photo", audience: "photo-upload",
+    })).payload;
+  } catch { throw new HttpError(400, "This upload has expired. Choose the photo again."); }
+  if (payload.sub !== owner) throw new HttpError(403, "This upload belongs to another administrator.");
+  if (typeof payload.key !== "string" || !payload.key.includes("/staging/") ||
+      typeof payload.size !== "number" || !Number.isSafeInteger(payload.size) ||
+      payload.size < 1 || payload.size > MAX_PHOTO_BYTES ||
+      !["image/jpeg", "image/png", "image/webp"].includes(String(payload.contentType))) {
+    throw new HttpError(400, "Invalid photo upload.");
+  }
+  return { file: new MongoPhotoFile(payload.key), size: payload.size, contentType: String(payload.contentType) };
 }
 
 export function imageType(bytes: Buffer): string | null {
@@ -77,16 +71,13 @@ export function imageType(bytes: Buffer): string | null {
 }
 
 export const photoRequestInput = z.object({
-  size: z.number().int().min(1).max(MAX_PHOTO_BYTES, "Photos must be 8 MB or smaller."),
+  size: z.number().int().min(1).max(MAX_PHOTO_BYTES, "Photos must be 4 MB or smaller."),
   contentType: z.enum(["image/jpeg", "image/png", "image/webp"], { message: "Choose a JPEG, PNG or WebP photo." }),
 }).strict();
 
 function fileAt(folder: "staging" | "photos", id: string) {
   if (!UUID.test(id)) throw new HttpError(404, "Photo not found.");
-  const dir = process.env.PRIVATE_OBJECT_DIR;
-  if (!dir) throw new HttpError(503, "Photo storage is not configured. Please try again later.");
-  const [bucket, ...path] = dir.replace(/^\/+|\/+$/g, "").split("/");
-  return storage.bucket(bucket).file([...path, "independent-shop", folder, id].join("/"));
+  return new MongoPhotoFile(`independent-shop/${folder}/${id}`);
 }
 
 function ticketKey() {
@@ -98,19 +89,7 @@ function ticketKey() {
 export async function requestPhotoUpload(owner: string, input: z.infer<typeof photoRequestInput>) {
   const id = randomUUID();
   const file = fileAt("staging", id);
-  const response = await fetch(`${SIDECAR}/object-storage/signed-object-url`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      bucket_name: file.bucket.name,
-      object_name: file.name,
-      method: "PUT",
-      expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
-    }),
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!response.ok) throw new HttpError(503, "Photo storage is unavailable. Please try again.");
-  const { signed_url } = await response.json();
+  const signed_url = await mongoUploadUrl(owner, file.name, input.size, input.contentType);
   const ticket = await new SignJWT({ id, size: input.size, contentType: input.contentType })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(owner)
@@ -123,7 +102,7 @@ export async function requestPhotoUpload(owner: string, input: z.infer<typeof ph
 }
 
 export async function validatePhoto(bytes: Buffer, expectedType: string) {
-  if (!bytes.length || bytes.length > MAX_PHOTO_BYTES) throw new HttpError(400, "Photos must be 8 MB or smaller.");
+  if (!bytes.length || bytes.length > MAX_PHOTO_BYTES) throw new HttpError(400, "Photos must be 4 MB or smaller.");
   const jpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
   const png = bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   const webp = bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP";
@@ -137,7 +116,9 @@ export async function validatePhoto(bytes: Buffer, expectedType: string) {
     }
     // Decode the full image, remove metadata/trailing payloads, apply EXIF
     // orientation and publish a separate immutable object, never the PUT target.
-    return await image.rotate().resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true }).webp({ quality: 90 }).toBuffer();
+    const output = await image.rotate().resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true }).webp({ quality: 90 }).toBuffer();
+    if (output.length > MAX_PHOTO_BYTES) throw new Error("Optimized image exceeds the delivery limit");
+    return output;
   } catch {
     throw new HttpError(400, "This photo is damaged, animated or too large to decode. Use a still photo of up to 24 megapixels.");
   }
@@ -166,7 +147,7 @@ export async function finalizePhoto(owner: string, ticket: string) {
   try {
     const size = Number(metadata.size);
     if (size !== payload.size || size > MAX_PHOTO_BYTES || size < 1) {
-      throw new HttpError(400, "The uploaded photo size does not match. Use a photo of 8 MB or smaller and try again.");
+      throw new HttpError(400, "The uploaded photo size does not match. Use a photo of 4 MB or smaller and try again.");
     }
     const [bytes] = await snapshot.download();
     const safePhoto = await validatePhoto(bytes, payload.contentType);

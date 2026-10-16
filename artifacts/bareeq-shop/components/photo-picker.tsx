@@ -9,12 +9,12 @@ import { ghostBtn } from "@/components/shop-ui";
 import { hasPermission } from "@/lib/permissions";
 
 type UploadUrl = { id: string; uploadURL: string };
-const MAX_SIZE = 5 * 1024 * 1024;
+const MAX_SIZE = 4 * 1024 * 1024;
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp"];
 
 export async function uploadPhotoFile(file: File, onProgress?: (progress: number) => void): Promise<AdminPhoto> {
   if (!ACCEPTED.includes(file.type)) throw new Error("Choose a JPEG, PNG or WebP image.");
-  if (file.size > MAX_SIZE) throw new Error("Images must be 5 MiB or smaller.");
+  if (file.size > MAX_SIZE) throw new Error("Images must be 4 MiB or smaller.");
   if (file.size <= 0) throw new Error("This image is empty.");
   const signed = await api<UploadUrl>("/admin/photos/upload-url", {
     method: "POST",

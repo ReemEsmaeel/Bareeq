@@ -8,7 +8,7 @@ import { Photo } from "@/models/Photo";
 
 const input = z.object({
   name: z.string().trim().min(1).max(150),
-  size: z.number().int().min(1).max(MAX_PHOTO_BYTES, "Photo must be 5 MB or smaller."),
+  size: z.number().int().min(1).max(MAX_PHOTO_BYTES, "Photo must be 4 MB or smaller."),
   contentType: z.enum(["image/jpeg", "image/png", "image/webp"], { message: "Choose a JPEG, PNG or WebP image." }),
 }).strict();
 
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     await rateLimit(request, "photo-upload", 30, 15, String(admin._id));
     const photo = await Photo.create({ ...data, expiresAt: new Date(Date.now() + 15 * 60000) });
     try {
-      return { id: String(photo._id), uploadURL: await photoUploadUrl(String(photo._id)) };
+      return { id: String(photo._id), uploadURL: await photoUploadUrl(String(photo._id), String(admin._id), data.size, data.contentType) };
     } catch (error) {
       await Photo.deleteOne({ _id: photo._id, status: "pending" });
       throw error;
