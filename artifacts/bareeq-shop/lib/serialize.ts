@@ -41,6 +41,7 @@ export function publicOrder(order: any): ShopOrder {
       price: item.price,
     })),
     total: order.total,
+    currency: order.currency === "KWD" ? "KWD" : "SAR",
     status: order.status,
     paymentProvider: order.paymentProvider ?? "manual",
     paidAt: order.paidAt ? new Date(order.paidAt).toISOString() : null,

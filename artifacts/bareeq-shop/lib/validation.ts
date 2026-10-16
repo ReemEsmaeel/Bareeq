@@ -26,7 +26,7 @@ export const productInput = z.object({
   nameAr: z.string().trim().min(1).max(150),
   description: z.string().trim().min(1).max(3000),
   descriptionAr: z.string().trim().min(1).max(3000),
-  price: z.number().finite().min(0.01).max(1000000).refine((value) => Math.abs(value * 100 - Math.round(value * 100)) < 0.00001, "Use at most two decimal places for the price."),
+  price: z.number().finite().min(0.001).max(1000000).refine((value) => Math.abs(value * 1000 - Math.round(value * 1000)) < 0.00001, "Use at most three decimal places for the price."),
   image: z.string().max(2000).refine((value) => {
     if (/^\/[a-zA-Z0-9/_\-.]+$/.test(value) && !value.includes("..")) return true;
     try {

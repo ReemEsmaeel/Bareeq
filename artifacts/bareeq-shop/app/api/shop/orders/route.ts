@@ -9,6 +9,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { User } from "@/models/User";
 import { Order } from "@/models/Order";
 import type { ShopOrder } from "@/lib/types";
+import { SHOP_CURRENCY } from "@/lib/money";
 
 export async function GET() {
   return handle(async () => {
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
             price: item.product.price,
           })),
           total: cart.total,
+          currency: SHOP_CURRENCY,
           status: "pending",
           paymentProvider: "stripe",
         }], { session });

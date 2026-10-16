@@ -17,7 +17,9 @@ export async function GET() {
       can("customers") ? User.countDocuments({ role: "customer" }) : null,
       can("orders") ? Order.countDocuments() : null,
       can("orders") ? Order.countDocuments({ status: "pending" }) : null,
-      can("orders") ? Order.aggregate([{ $group: { _id: null, total: { $sum: "$total" } } }]) : null,
+      can("orders") ? Order.aggregate([
+        { $group: { _id: { $ifNull: ["$currency", "SAR"] }, total: { $sum: "$total" } } },
+      ]) : null,
       can("orders") ? Order.countDocuments({ status: "paid" }) : null,
       can("customers") ? User.countDocuments({ role: "customer", active: true }) : null,
       can("photos") ? Photo.countDocuments({ status: "ready" }) : null,
@@ -25,7 +27,9 @@ export async function GET() {
       can("products") ? Product.aggregate([{ $group: { _id: "$category", count: { $sum: 1 } } }]) : [],
     ]);
     return {
-      products, customers, orders, pendingOrders, orderValue: value ? value[0]?.total || 0 : null,
+      products, customers, orders, pendingOrders,
+      orderValue: value ? value.find((row: any) => row._id === "KWD")?.total || 0 : null,
+      orderValueSAR: value ? value.find((row: any) => row._id === "SAR")?.total || 0 : null,
       paidOrders, activeCustomers, photoCount, latestOrders: latestOrders.map(adminOrder),
       collections: (can("products") ? ["Lujain", "Rawnaq", "Wahaj"] : []).map((category) => ({
         category, count: grouped.find((row: any) => row._id === category)?.count || 0,

@@ -13,6 +13,8 @@ const orderSchema = new Schema(
       },
     ],
     total: { type: Number, required: true },
+    // Legacy orders default to SAR; new shop orders set KWD explicitly.
+    currency: { type: String, enum: ["SAR", "KWD"], default: "SAR" },
     status: { type: String, enum: ["pending", "paid"], default: "pending" },
     paymentProvider: { type: String, enum: ["manual", "stripe"], default: "manual" },
     checkoutAttempt: { type: Number, default: 0 },

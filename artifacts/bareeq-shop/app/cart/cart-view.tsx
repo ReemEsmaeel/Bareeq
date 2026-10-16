@@ -80,7 +80,7 @@ export function CartView() {
     if (!isCurrent()) return;
     trackEvent("order_recorded", {
       quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-      value_sar: order.total,
+      value_kwd: order.total,
     });
     try {
       const checkout = await api<{ url: string; orderId: string }>("/checkout", {

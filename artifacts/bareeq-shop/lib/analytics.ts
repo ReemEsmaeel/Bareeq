@@ -1,6 +1,6 @@
 import type { ShopProduct } from "./types";
 
-type ValueData = { quantity: number; value_sar: number };
+type ValueData = { quantity: number; value_kwd: number };
 type EventData = {
   account_created: undefined;
   add_to_bag: ValueData & { collection: ShopProduct["category"] };
@@ -23,8 +23,8 @@ export function trackEvent<T extends keyof EventData>(name: T, data: EventData[T
     let safeData: AnalyticsData | undefined;
     if (name !== "account_created") {
       if (!data || !Number.isInteger(data.quantity) || data.quantity < 1
-        || !Number.isFinite(data.value_sar) || data.value_sar < 0) return;
-      safeData = { quantity: data.quantity, value_sar: data.value_sar };
+        || !Number.isFinite(data.value_kwd) || data.value_kwd < 0) return;
+      safeData = { quantity: data.quantity, value_kwd: data.value_kwd };
       if (name === "add_to_bag") {
         const collection = (data as EventData["add_to_bag"]).collection;
         if (!["Lujain", "Rawnaq", "Wahaj"].includes(collection)) return;

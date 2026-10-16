@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 import { connectDB } from "./db";
 import { HttpError } from "./http";
 import { Order } from "../models/Order";
+import { STRIPE_CURRENCY, toMinorUnits, type MoneyCurrency } from "./money";
 
 export const STRIPE_SHOP = "bareeq_independent_shop";
 
@@ -18,8 +19,9 @@ export async function recordVerifiedPayment(session: Stripe.Checkout.Session) {
     // Retryable: a webhook may arrive before session creation has been saved.
     throw new HttpError(503, "The order is not ready for payment confirmation. Please retry.");
   }
-  if (session.client_reference_id !== String(order.user) || session.currency !== "sar" ||
-      session.amount_total !== Math.round(order.total * 100)) {
+  const currency: MoneyCurrency = order.currency === "KWD" ? "KWD" : "SAR";
+  if (session.client_reference_id !== String(order.user) || session.currency !== STRIPE_CURRENCY[currency] ||
+      session.amount_total !== toMinorUnits(order.total, currency)) {
     throw new HttpError(400, "The payment amount or account does not match the order.");
   }
   if (session.payment_status === "paid" && session.status === "complete") {
@@ -47,8 +49,11 @@ export async function recordVerifiedPaymentFailure(session: Stripe.Checkout.Sess
     _id: id, user: session.client_reference_id, paymentProvider: "stripe",
     stripeSessionId: session.id, status: "pending",
   });
-  if (!order || session.currency !== "sar" ||
-      session.amount_total !== Math.round(order.total * 100)) {
+  const currency: MoneyCurrency | null = order
+    ? order.currency === "KWD" ? "KWD" : "SAR"
+    : null;
+  if (!order || !currency || session.currency !== STRIPE_CURRENCY[currency] ||
+      session.amount_total !== toMinorUnits(order.total, currency)) {
     throw new HttpError(503, "The order is not ready for payment confirmation. Please retry.");
   }
   await Order.updateOne({

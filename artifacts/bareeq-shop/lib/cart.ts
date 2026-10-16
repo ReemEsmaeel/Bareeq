@@ -4,6 +4,7 @@ import { Product } from "@/models/Product";
 import { User } from "@/models/User";
 import { publicProduct } from "./serialize";
 import { HttpError } from "./http";
+import { SHOP_CURRENCY, toMinorUnits } from "./money";
 import type { CartItem, ShopCart, ShopProduct } from "./types";
 
 export async function readCart(user: any, session?: ClientSession): Promise<ShopCart> {
@@ -18,11 +19,11 @@ export async function readCart(user: any, session?: ClientSession): Promise<Shop
     return product ? [{ product, quantity: item.quantity }] : [];
   });
   const total = items.reduce(
-    (sum, item) => sum + Math.round(item.product.price * 100) * item.quantity,
+    (sum, item) => sum + toMinorUnits(item.product.price, SHOP_CURRENCY) * item.quantity,
     0,
-  ) / 100;
+  ) / 1_000;
   const quote = createHash("sha256").update(JSON.stringify(
-    items.map((item) => [item.product.id, item.quantity, item.product.price]),
+    [SHOP_CURRENCY, ...items.map((item) => [item.product.id, item.quantity, item.product.price])],
   )).digest("hex");
   return { items, total, quote, removedItems: items.length !== user.cart.length };
 }

@@ -1,9 +1,9 @@
-export function formatPrice(value: number, language: "en" | "ar") {
-  return new Intl.NumberFormat(language === "ar" ? "ar-SA" : "en-SA", {
+import type { MoneyCurrency } from "./money";
+
+export function formatPrice(value: number, language: "en" | "ar", currency: MoneyCurrency = "KWD") {
+  return new Intl.NumberFormat(language === "ar" ? "ar-KW" : "en-KW", {
     style: "currency",
-    currency: "SAR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    currency,
   }).format(value);
 }
 

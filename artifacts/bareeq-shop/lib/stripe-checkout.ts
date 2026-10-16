@@ -4,14 +4,16 @@ import { HttpError } from "./http";
 import { getStripe, webhookSecret } from "./stripe";
 import { STRIPE_SHOP, recordVerifiedPayment } from "./stripe-payment";
 import { Order } from "../models/Order";
+import { STRIPE_CURRENCY, toMinorUnits, type MoneyCurrency } from "./money";
 
-async function stripePrice(stripe: Stripe, item: any) {
-  const amount = Math.round(item.price * 100);
+async function stripePrice(stripe: Stripe, item: any, currency: MoneyCurrency) {
+  const amount = toMinorUnits(item.price, currency);
   if (!Number.isSafeInteger(amount) || amount < 1 || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 20) {
     throw new HttpError(400, "This order has an invalid price or quantity.");
   }
   const name = String(item.name).slice(0, 250);
-  const fingerprint = createHash("sha256").update(`${item.product}:${amount}:${name}`).digest("hex");
+  const stripeCurrency = STRIPE_CURRENCY[currency];
+  const fingerprint = createHash("sha256").update(`${item.product}:${currency}:${amount}:${name}`).digest("hex");
   const lookup = `bareeq_test_${fingerprint}`;
   const existing = await stripe.prices.list({ lookup_keys: [lookup], active: true, limit: 1 });
   if (existing.data[0]) return existing.data[0].id;
@@ -19,7 +21,7 @@ async function stripePrice(stripe: Stripe, item: any) {
     name, metadata: { shop: STRIPE_SHOP, productId: String(item.product) },
   }, { idempotencyKey: `bareeq-product-${fingerprint}` });
   const price = await stripe.prices.create({
-    product: product.id, currency: "sar", unit_amount: amount, lookup_key: lookup,
+    product: product.id, currency: stripeCurrency, unit_amount: amount, lookup_key: lookup,
     metadata: { shop: STRIPE_SHOP },
   }, { idempotencyKey: `bareeq-price-${fingerprint}` });
   return price.id;
@@ -34,10 +36,12 @@ export async function createOrderCheckout(orderId: string, userId: string, origi
     let order = await Order.findOne({ _id: orderId, user: userId });
     if (!order) throw new HttpError(404, "This order was not found.");
     if (order.status === "paid") throw new HttpError(409, "This order is already paid.");
+    const currency: MoneyCurrency = order.currency === "KWD" ? "KWD" : "SAR";
+    const totalMinor = toMinorUnits(order.total, currency);
     if (!order.items.length || order.items.length > 40 ||
-        !Number.isSafeInteger(Math.round(order.total * 100)) || order.total <= 0 ||
-        Math.round(order.total * 100) > 99_999_999 ||
-        order.items.reduce((sum: number, item: any) => sum + Math.round(item.price * 100) * item.quantity, 0) !== Math.round(order.total * 100)) {
+        !Number.isSafeInteger(totalMinor) || totalMinor <= 0 ||
+        totalMinor > 99_999_999 ||
+        order.items.reduce((sum: number, item: any) => sum + toMinorUnits(item.price, currency) * item.quantity, 0) !== totalMinor) {
       throw new HttpError(400, "This order total cannot be processed. Please contact the atelier.");
     }
     if (!order.checkoutOrigin || order.paymentProvider !== "stripe") {
@@ -69,7 +73,7 @@ export async function createOrderCheckout(orderId: string, userId: string, origi
       if (!changed.modifiedCount) continue;
       continue;
     }
-    const prices = await Promise.all(order.items.map((item: any) => stripePrice(stripe, item)));
+    const prices = await Promise.all(order.items.map((item: any) => stripePrice(stripe, item, currency)));
     const attempt = order.checkoutAttempt ?? 0;
     const session = await stripe.checkout.sessions.create({
       mode: "payment", locale: "auto",

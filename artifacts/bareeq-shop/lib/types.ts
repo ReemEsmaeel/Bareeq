@@ -46,6 +46,7 @@ export type ShopOrder = {
     quantity: number;
   }[];
   total: number;
+  currency: "KWD" | "SAR";
   status: "pending" | "paid";
   paymentProvider?: "manual" | "stripe";
   paidAt?: string | null;
@@ -59,6 +60,7 @@ export type AdminSummary = {
   orders: number | null;
   pendingOrders: number | null;
   orderValue: number | null;
+  orderValueSAR?: number | null;
   paidOrders: number | null;
   activeCustomers: number | null;
   photoCount: number | null;
