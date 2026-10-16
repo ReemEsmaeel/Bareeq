@@ -6,3 +6,4 @@
 - [Preview process ownership](preview-process-ownership.md) — failed workflows can coexist with stale listeners; diagnose port ownership before changing code or ports.
 - [Shop analytics policy](shop-analytics-policy.md) — recorded orders are not paid purchases; keep funnel dimensions privacy-minimal.
 - [Git provider authorization](git-provider-authorization.md) — healthy integration status may not mean workspace Git commands can authenticate.
+- [Stripe payment scope](stripe-payment-scope.md) — use the user's own Stripe account directly while preserving Next.js, MongoDB, and Vercel.
