@@ -14,9 +14,16 @@ const orderSchema = new Schema(
     ],
     total: { type: Number, required: true },
     status: { type: String, enum: ["pending", "paid"], default: "pending" },
+    paymentProvider: { type: String, enum: ["manual", "stripe"], default: "manual" },
+    checkoutAttempt: { type: Number, default: 0 },
+    checkoutOrigin: { type: String },
+    stripeSessionId: { type: String },
+    stripePaymentIntentId: { type: String },
+    paidAt: { type: Date },
   },
   { timestamps: true },
 );
+orderSchema.index({ stripeSessionId: 1 }, { unique: true, sparse: true });
 
 export const Order =
   mongoose.models.ShopOrder || mongoose.model("ShopOrder", orderSchema);

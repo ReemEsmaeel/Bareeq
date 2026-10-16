@@ -12,9 +12,13 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     const { id } = await context.params;
     validId(id);
     const data = z.object({ status: z.enum(["pending", "paid"]) }).strict().parse(await request.json());
-    const order = await Order.findByIdAndUpdate(id, { $set: data }, { returnDocument: "after", runValidators: true })
+    const order = await Order.findOneAndUpdate({ _id: id, paymentProvider: { $ne: "stripe" } },
+      { $set: data }, { returnDocument: "after", runValidators: true })
       .populate("user", "name email role active createdAt");
-    if (!order) throw new HttpError(404, "This order was not found.");
+    if (!order) {
+      if (await Order.exists({ _id: id })) throw new HttpError(409, "Stripe payment status is verified automatically and cannot be edited manually.");
+      throw new HttpError(404, "This order was not found.");
+    }
     return adminOrder(order);
   });
 }

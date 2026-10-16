@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
           })),
           total: cart.total,
           status: "pending",
+          paymentProvider: "stripe",
         }], { session });
         user.cart = [];
         await user.save({ session });
