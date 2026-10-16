@@ -16,13 +16,20 @@ type Draft = { name: string; nameAr: string; description: string; descriptionAr:
 const empty: Draft = { name: "", nameAr: "", description: "", descriptionAr: "", price: "", image: "", category: "Lujain" };
 
 const t = {
-  en: { kicker: "Pieces", title: "The collection.", add: "Add piece", search: "Search pieces", edit: "Edit", del: "Delete", newT: "New piece", editT: "Edit piece", name: "Name (English)", nameAr: "Name (Arabic)", desc: "Description (English)", descAr: "Description (Arabic)", price: "Price (SAR)", image: "Main product photo", imageHint: "A public HTTPS image URL or a local path such as /pieces/ring.jpg. Library photos are public product images; never upload sensitive files.", pick: "Choose from library", resetImage: "Remove photo", resetHint: "The illustrative default photo will be used after you save.", category: "Collection", save: "Save piece", saving: "Saving", photoUploading: "Uploading photo", cancel: "Cancel", created: "Piece added to the collection.", updated: "Piece updated.", deleted: "Piece removed.", delT: "Remove this piece?", delBody: "It will be removed from the storefront and from every customer's bag. Orders that already include it keep their saved record.", delConfirm: "Remove piece", emptyT: "No pieces yet.", emptyX: "Add the first piece to open the collection.", noMatch: "No pieces match this search.", priceErr: "Enter a price greater than zero with at most two decimals." },
+  en: { kicker: "Pieces", title: "The collection.", add: "Add piece", search: "Search pieces", edit: "Edit", del: "Delete", newT: "New piece", editT: "Edit piece", name: "Name (English)", nameAr: "Name (Arabic)", desc: "Description (English)", descAr: "Description (Arabic)", price: "Price (KWD)", image: "Main product photo", imageHint: "A public HTTPS image URL or a local path such as /pieces/ring.jpg. Library photos are public product images; never upload sensitive files.", pick: "Choose from library", resetImage: "Remove photo", resetHint: "The illustrative default photo will be used after you save.", category: "Collection", save: "Save piece", saving: "Saving", photoUploading: "Uploading photo", cancel: "Cancel", created: "Piece added to the collection.", updated: "Piece updated.", deleted: "Piece removed.", delT: "Remove this piece?", delBody: "It will be removed from the storefront and from every customer's bag. Orders that already include it keep their saved record.", delConfirm: "Remove piece", emptyT: "No pieces yet.", emptyX: "Add the first piece to open the collection.", noMatch: "No pieces match this search.", priceErr: "Enter a price greater than zero with at most three decimal places." },
   ar: { kicker: "القطع", title: "المجموعة.", add: "إضافة قطعة", search: "ابحثي في القطع", edit: "تعديل", del: "حذف", newT: "قطعة جديدة", editT: "تعديل القطعة", name: "الاسم (إنجليزي)", nameAr: "الاسم (عربي)", desc: "الوصف (إنجليزي)", descAr: "الوصف (عربي)", price: "السعر (ريال)", image: "الصورة الرئيسية للمنتج", imageHint: "رابط صورة HTTPS عامة أو مسار محلي مثل /pieces/ring.jpg. صور المكتبة صور منتجات عامة؛ لا ترفعي ملفات حساسة.", pick: "اختيار من المكتبة", resetImage: "إزالة الصورة", resetHint: "ستُستخدم الصورة التوضيحية الافتراضية بعد الحفظ.", category: "المجموعة", save: "حفظ القطعة", saving: "جارٍ الحفظ", photoUploading: "جارٍ رفع الصورة", cancel: "إلغاء", created: "أُضيفت القطعة إلى المجموعة.", updated: "تم تحديث القطعة.", deleted: "أُزيلت القطعة.", delT: "إزالة هذه القطعة؟", delBody: "ستُزال من المتجر ومن حقائب جميع العملاء. تحتفظ الطلبات السابقة التي تتضمنها بسجلّها المحفوظ.", delConfirm: "إزالة القطعة", emptyT: "لا قطع بعد.", emptyX: "أضيفي أول قطعة لافتتاح المجموعة.", noMatch: "لا قطع تطابق هذا البحث.", priceErr: "أدخلي سعراً أكبر من صفر بخانتين عشريتين كحد أقصى." },
 };
 
 export function AdminProducts() {
   const { language, user, authLoading } = useShop();
-  const c = t[language];
+  const copy = t[language];
+  const c = {
+    ...copy,
+    price: language === "ar" ? "السعر (د.ك.)" : copy.price,
+    priceErr: language === "ar"
+      ? "أدخلي سعراً أكبر من صفر وبثلاث خانات عشرية كحد أقصى."
+      : copy.priceErr,
+  };
   const ar = language === "ar";
   const canManagePhotos = hasPermission(user, "photos");
   const r = useScopedResource<ShopProduct[]>("/admin/products");
@@ -65,7 +72,7 @@ export function AdminProducts() {
     e.preventDefault();
     if (saving || uploadingPhoto || uploading) return;
     const price = Number(draft.price);
-    if (!Number.isFinite(price) || price <= 0 || !/^\d+(\.\d{1,2})?$/.test(draft.price.trim())) { setFormError(c.priceErr); return; }
+    if (!Number.isFinite(price) || price <= 0 || !/^\d+(\.\d{1,3})?$/.test(draft.price.trim())) { setFormError(c.priceErr); return; }
     const guard = r.scopeGuard();
     setSaving(true);
     setFormError("");
@@ -118,7 +125,7 @@ export function AdminProducts() {
               <div><label htmlFor="p-nameAr" className={adminLabel}>{c.nameAr}</label><input id="p-nameAr" required maxLength={150} dir="rtl" value={draft.nameAr} onChange={set("nameAr")} className={`${adminInput} font-arabic text-[16px]`} /></div>
               <div><label htmlFor="p-desc" className={adminLabel}>{c.desc}</label><textarea id="p-desc" required maxLength={3000} rows={4} dir="ltr" value={draft.description} onChange={set("description")} className={adminInput} /></div>
               <div><label htmlFor="p-descAr" className={adminLabel}>{c.descAr}</label><textarea id="p-descAr" required maxLength={3000} rows={4} dir="rtl" value={draft.descriptionAr} onChange={set("descriptionAr")} className={`${adminInput} font-arabic text-[16px]`} /></div>
-              <div><label htmlFor="p-price" className={adminLabel}>{c.price}</label><input id="p-price" required inputMode="decimal" dir="ltr" value={draft.price} onChange={set("price")} className={`${adminInput} tabular-nums`} /></div>
+              <div><label htmlFor="p-price" className={adminLabel}>{c.price}</label><input id="p-price" type="number" min="0.001" step="0.001" required inputMode="decimal" dir="ltr" value={draft.price} onChange={set("price")} className={`${adminInput} tabular-nums`} /></div>
               <div>
                 <label htmlFor="p-cat" className={adminLabel}>{c.category}</label>
                 <select id="p-cat" value={draft.category} onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value as Category }))} className={adminInput}>

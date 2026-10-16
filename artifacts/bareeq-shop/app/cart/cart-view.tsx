@@ -77,11 +77,11 @@ export function CartView() {
       setPlacing(false);
       return;
     }
-    if (!isCurrent()) return;
     trackEvent("order_recorded", {
       quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
       value_kwd: order.total,
     });
+    if (!isCurrent()) return;
     try {
       const checkout = await api<{ url: string; orderId: string }>("/checkout", {
         method: "POST", body: { orderId: order.id },

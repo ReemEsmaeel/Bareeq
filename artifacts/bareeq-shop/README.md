@@ -100,7 +100,7 @@ requires its test secret key, webhook signing secret and public shop URL.
 
 - `/`: bilingual editorial home with featured products loaded from MongoDB.
 - `/products` and `/products/[id]`: collection filtering, name search, product
-  details, SAR prices, and adding quantities to a bag.
+  details, KWD prices (three decimal places), and adding quantities to a bag.
 - `/signup`, `/login`, `/account`: signup/login/logout and protected name/password
   updates. Names appear in navigation; emails are read-only. Password changes
   invalidate older sessions.
@@ -150,7 +150,7 @@ creates customers only; administrator creation is not public.
 
 Checkout records a pending order in MongoDB and atomically clears the bag.
 All prices are computed server-side from product records, and Stripe Checkout
-uses SAR prices and the saved order snapshot, not amounts supplied by the browser.
+uses KWD prices and the saved order snapshot, not amounts supplied by the browser.
 Test-mode checkout is hosted by Stripe; no card details enter this shop. A customer
 can return to the saved order after cancelling or an expired checkout. An order is
 marked paid only after verifying the Stripe session or its signed webhook; duplicate

@@ -1,6 +1,6 @@
-import type { MoneyCurrency } from "./money";
+import { SHOP_CURRENCY, type MoneyCurrency } from "./money";
 
-export function formatPrice(value: number, language: "en" | "ar", currency: MoneyCurrency = "KWD") {
+export function formatPrice(value: number, language: "en" | "ar", currency: MoneyCurrency = SHOP_CURRENCY) {
   return new Intl.NumberFormat(language === "ar" ? "ar-KW" : "en-KW", {
     style: "currency",
     currency,

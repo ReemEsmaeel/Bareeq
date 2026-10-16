@@ -18,6 +18,7 @@
     "verify:photo-library": "tsx scripts/verify-photo-library.ts",
     "verify:settings": "tsx scripts/verify-settings.ts",
     "verify:order-protection": "tsx scripts/verify-order-protection.ts",
+    "verify:currency": "tsx scripts/verify-currency.ts",
     "verify:next-path": "tsx scripts/verify-next-path.ts",
     "create-admin": "tsx scripts/create-admin.ts"
   },

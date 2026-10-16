@@ -52,7 +52,7 @@ export function ProductDetail({ id }: { id: string }) {
       if (added) trackEvent("add_to_bag", {
         collection: added.product.category,
         quantity,
-        value_sar: Math.round(added.product.price * quantity * 100) / 100,
+        value_kwd: Math.round(added.product.price * quantity * 1000) / 1000,
       });
       setNotice({ ok: true, text: c.added });
     } catch (err) {

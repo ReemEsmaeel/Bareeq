@@ -82,6 +82,10 @@ export function AdminDashboard() {
               {canOrders && summary.orderValue !== null && <div className="bg-[#2a0006] p-6 text-[#f6fbf5] sm:p-8">
                 <p className="eyebrow text-[#b7c6b6]">{c.value}</p>
                 <p className="mt-3 font-display text-[clamp(2.2rem,5vw,3.8rem)] leading-none tabular-nums">{formatPrice(summary.orderValue, language)}</p>
+                {(summary.orderValueSAR ?? 0) > 0 && <p className="mt-3 text-[12px] text-[#f6fbf5]/75">
+                  {ar ? "الطلبات التاريخية بالريال السعودي: " : "Historical orders in SAR: "}
+                  {formatPrice(summary.orderValueSAR!, language, "SAR")}
+                </p>}
                 <p className="mt-4 max-w-[560px] text-[11px] leading-[1.8] text-[#f6fbf5]/65">{c.valueNote}</p>
                 <p className="mt-6 border-t border-[#f6fbf5]/15 pt-4 text-[11px] text-[#b7c6b6]">{c.note}</p>
               </div>}
@@ -117,7 +121,7 @@ export function AdminDashboard() {
                           <span className="font-display text-[16px] text-[#2a0006]">{order.id.slice(-8)}</span>
                           <span className={`truncate text-[12px] text-[#796d68] ${ar ? "font-arabic" : ""}`}>{order.customer?.name || "—"}</span>
                           <time className="text-[11px] text-[#796d68]" dateTime={order.createdAt}>{new Intl.DateTimeFormat(ar ? "ar-SA" : "en", { dateStyle: "medium" }).format(new Date(order.createdAt))}</time>
-                          <span className="text-[12px] tabular-nums text-[#2a0006]">{formatPrice(order.total, language)}</span>
+                          <span className="text-[12px] tabular-nums text-[#2a0006]">{formatPrice(order.total, language, order.currency)}</span>
                           <span className={`w-fit border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.1em] ${order.status === "paid" ? "border-[#456553]/30 bg-[#456553]/10 text-[#456553]" : "border-[#4a0e17]/20 bg-[#4a0e17]/5 text-[#4a0e17]"}`}>{order.status === "paid" ? c.paidState : c.pendingState}</span>
                         </Link>
                       </li>

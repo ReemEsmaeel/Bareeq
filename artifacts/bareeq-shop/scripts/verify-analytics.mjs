@@ -95,8 +95,8 @@ for (const which of ["signup", "bag", "order"]) {
   assert.equal(events.length, 1);
   const expected = {
     signup: { name: "account_created" },
-    bag: { name: "add_to_bag", data: { collection: "Wahaj", quantity: 2, value_sar: 24.7 } },
-    order: { name: "order_recorded", data: { quantity: 2, value_sar: 24.7 } },
+    bag: { name: "add_to_bag", data: { collection: "Wahaj", quantity: 2, value_kwd: 24.7 } },
+    order: { name: "order_recorded", data: { quantity: 2, value_kwd: 24.7 } },
   };
   assert.deepEqual(events[0], expected[which]);
   for (const status of [400, 401, 409, 500]) {
@@ -128,13 +128,13 @@ assert.equal(events.length, 1);
 events.length = 0;
 // Use the saved order response, not stale bag totals; emit even if the account changed.
 await run("order", tracker, { cart: { quote: "quote", total: 999 }, scopeGuard: () => () => false });
-assert.equal(events[0].data.value_sar, 24.7);
+assert.equal(events[0].data.value_kwd, 24.7);
 const privacy = context(tracker);
-privacy.sandbox.trackEvent("order_recorded", { quantity: 2, value_sar: 24.7, email: "private@example.invalid" });
-assert.deepEqual(Object.keys(events.at(-1).data).sort(), ["quantity", "value_sar"]);
+privacy.sandbox.trackEvent("order_recorded", { quantity: 2, value_kwd: 24.7, email: "private@example.invalid" });
+assert.deepEqual(Object.keys(events.at(-1).data).sort(), ["quantity", "value_kwd"]);
 const length = events.length;
-privacy.sandbox.trackEvent("add_to_bag", { quantity: 1, value_sar: 12, collection: "free-form" });
-privacy.sandbox.trackEvent("order_recorded", { quantity: 0, value_sar: NaN });
+privacy.sandbox.trackEvent("add_to_bag", { quantity: 1, value_kwd: 12, collection: "free-form" });
+privacy.sandbox.trackEvent("order_recorded", { quantity: 0, value_kwd: NaN });
 assert.equal(events.length, length, "Reject invalid dimensions");
 delete privacy.sandbox.window;
 assert.doesNotThrow(() => privacy.sandbox.trackEvent("account_created", undefined));

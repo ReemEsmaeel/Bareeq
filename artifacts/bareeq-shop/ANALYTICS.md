@@ -7,8 +7,8 @@ dependency is configured by the app.
 | Event | Successful action | Dimensions |
 | --- | --- | --- |
 | `account_created` | Signup request succeeds, before session refresh/navigation | None |
-| `add_to_bag` | Add request succeeds and returns the added piece | `collection` (Lujain, Rawnaq, Wahaj), `quantity` added, `value_sar` of that addition |
-| `order_recorded` | Server returns a newly saved order | `quantity` summed from recorded items, `value_sar` from the saved order total |
+| `add_to_bag` | Add request succeeds and returns the added piece | `collection` (Lujain, Rawnaq, Wahaj), `quantity` added, `value_kwd` of that addition |
+| `order_recorded` | Server returns a newly saved order | `quantity` summed from recorded items, `value_kwd` from the saved order total |
 
 Order value is **not collected revenue**: placing an order never charges payment.
 No names, emails, passwords, tokens, customer/product/order identifiers, bag

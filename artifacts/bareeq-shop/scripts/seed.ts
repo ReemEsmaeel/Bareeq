@@ -6,7 +6,7 @@ const products = [
   {
     name: "Lujain Celestial Drop Pendant",
     nameAr: "قلادة لُجين بقطرة سماوية",
-    price: 680,
+    price: 50,
     category: "Lujain",
     description: "A luminous sterling-silver pendant, shaped to catch light with a delicate celestial drop.",
     descriptionAr: "قلادة مضيئة من فضة الإسترلينغ، صيغت بقطرة سماوية رقيقة تعكس الضوء.",
@@ -14,7 +14,7 @@ const products = [
   {
     name: "Lujain Trinity Stacking Bands",
     nameAr: "خواتم لُجين الثلاثية",
-    price: 420,
+    price: 50,
     category: "Lujain",
     description: "Three considered silver bands to wear together or separately, finished with quiet brilliance.",
     descriptionAr: "ثلاثة خواتم فضية بلمسة هادئة، تُرتدى معاً أو منفردة.",
@@ -22,7 +22,7 @@ const products = [
   {
     name: "Rawnaq Sculpted Cuff",
     nameAr: "سوار رَوْنَق المنحوت",
-    price: 790,
+    price: 50,
     category: "Rawnaq",
     description: "A sculptural sterling-silver cuff with fluid lines and a beautifully tactile finish.",
     descriptionAr: "سوار منحوت من فضة الإسترلينغ، بخطوط انسيابية وملمس مميز.",
@@ -30,7 +30,7 @@ const products = [
   {
     name: "Wahaj Pavé Halo Earrings",
     nameAr: "أقراط وَهَج بهالة مرصعة",
-    price: 960,
+    price: 50,
     category: "Wahaj",
     description: "Silver halo earrings with a pavé-inspired finish, made for the moments that stay with you.",
     descriptionAr: "أقراط فضية بهالة ولمسة مرصعة، للحظات التي تبقى معكِ.",
