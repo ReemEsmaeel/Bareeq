@@ -9,6 +9,12 @@ Keep direct image delivery enabled for the current routed Vercel deployment unle
 
 **How to apply:** Check both raw photo URLs and browser-generated optimizer URLs when diagnosing photos. Do not assume a working photo API proves homepage image rendering works, or re-enable optimization without testing the published route.
 
+An already-open browser page can still show photo failures after a successful redeployment.
+
+**Why:** The user confirmed that reloading restored the photos after fresh checks of all live photo URLs already returned valid images.
+
+**How to apply:** Distinguish earlier console errors from new requests. When direct production URLs work, check a fresh page load before changing secrets or asking for another redeployment.
+
 For a dynamic Next.js artifact, use a structured production run command. A command string assigned to the static template's production `serve` field is rejected by artifact schema validation.
 
 **Why:** The static artifact configuration does not represent a Next.js server with API routes.
