@@ -9,3 +9,4 @@
 - [Stripe payment scope](stripe-payment-scope.md) — use the user's own Stripe account directly while preserving Next.js, MongoDB, and Vercel.
 - [Shop currency and prices](shop-currency.md) — new catalog prices use KWD; retain SAR as the currency for historical orders.
 - [Vercel project-scoped access](vercel-project-scope.md) — a token may manage the shop while team listing is forbidden; use the project's account ID for scope.
+- [Host-routing verification](host-routing-verification.md) — verify the actual HTTP Host when testing virtual-host redirects; fetch overrides can mislead.
