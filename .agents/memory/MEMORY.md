@@ -8,3 +8,4 @@
 - [Git provider authorization](git-provider-authorization.md) — healthy integration status may not mean workspace Git commands can authenticate.
 - [Stripe payment scope](stripe-payment-scope.md) — use the user's own Stripe account directly while preserving Next.js, MongoDB, and Vercel.
 - [Shop currency and prices](shop-currency.md) — new catalog prices use KWD; retain SAR as the currency for historical orders.
+- [Vercel project-scoped access](vercel-project-scope.md) — a token may manage the shop while team listing is forbidden; use the project's account ID for scope.
